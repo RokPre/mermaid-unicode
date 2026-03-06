@@ -38,6 +38,8 @@ type graph struct {
 	rowHeight    map[int]int
 	styleClasses map[string]styleClass
 	styleType    string
+	boxBorderPadding int
+	graphDirection   string
 	paddingX     int
 	paddingY     int
 	subgraphs    []*subgraph
@@ -95,6 +97,8 @@ func (g *graph) setStyleClasses(properties *graphProperties) {
 	log.Debugf("Setting style classes to %v", properties.styleClasses)
 	g.styleClasses = *properties.styleClasses
 	g.styleType = properties.styleType
+	g.boxBorderPadding = properties.boxBorderPadding
+	g.graphDirection = properties.graphDirection
 	g.paddingX = properties.paddingX
 	g.paddingY = properties.paddingY
 	for _, n := range g.nodes {
@@ -195,7 +199,7 @@ func (g *graph) createMapping() {
 
 	// Separate root nodes by whether they're in subgraphs, but only if we have both types
 	// AND there are edges in subgraphs (indicating intentional layout structure)
-	shouldSeparate := graphDirection == "LR" && hasExternalRoots && hasSubgraphRootsWithEdges
+	shouldSeparate := g.graphDirection == "LR" && hasExternalRoots && hasSubgraphRootsWithEdges
 
 	externalRootNodes := []*node{}
 	subgraphRootNodes := []*node{}
@@ -215,7 +219,7 @@ func (g *graph) createMapping() {
 	// Place external root nodes first at level 0
 	for _, n := range externalRootNodes {
 		var mappingCoord *gridCoord
-		if graphDirection == "LR" {
+		if g.graphDirection == "LR" {
 			mappingCoord = g.reserveSpotInGrid(g.nodes[n.index], &gridCoord{x: 0, y: highestPositionPerLevel[0]})
 		} else {
 			mappingCoord = g.reserveSpotInGrid(g.nodes[n.index], &gridCoord{x: highestPositionPerLevel[0], y: 0})
@@ -231,7 +235,7 @@ func (g *graph) createMapping() {
 		subgraphLevel := 4
 		for _, n := range subgraphRootNodes {
 			var mappingCoord *gridCoord
-			if graphDirection == "LR" {
+			if g.graphDirection == "LR" {
 				mappingCoord = g.reserveSpotInGrid(g.nodes[n.index], &gridCoord{x: subgraphLevel, y: highestPositionPerLevel[subgraphLevel]})
 			} else {
 				mappingCoord = g.reserveSpotInGrid(g.nodes[n.index], &gridCoord{x: highestPositionPerLevel[subgraphLevel], y: subgraphLevel})
@@ -246,7 +250,7 @@ func (g *graph) createMapping() {
 		log.Debugf("Creating mapping for node %s at %v", n.name, n.gridCoord)
 		var childLevel int
 		// Next column is 4 coords further. This is because every node is 3 coords wide + 1 coord inbetween.
-		if graphDirection == "LR" {
+		if g.graphDirection == "LR" {
 			childLevel = n.gridCoord.x + 4
 		} else {
 			childLevel = n.gridCoord.y + 4
@@ -259,7 +263,7 @@ func (g *graph) createMapping() {
 			}
 
 			var mappingCoord *gridCoord
-			if graphDirection == "LR" {
+			if g.graphDirection == "LR" {
 				mappingCoord = g.reserveSpotInGrid(g.nodes[child.index], &gridCoord{x: childLevel, y: highestPosition})
 			} else {
 				mappingCoord = g.reserveSpotInGrid(g.nodes[child.index], &gridCoord{x: highestPosition, y: childLevel})

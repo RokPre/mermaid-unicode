@@ -15,6 +15,7 @@ type graphProperties struct {
 	data           *orderedmap.OrderedMap[string, []textEdge]
 	nodeSpecs      map[string]graphNodeSpec
 	styleClasses   *map[string]styleClass
+	boxBorderPadding int
 	graphDirection string
 	styleType      string
 	paddingX       int
@@ -273,14 +274,15 @@ func mermaidFileToMap(mermaid, styleType string) (*graphProperties, error) {
 	data := orderedmap.NewOrderedMap[string, []textEdge]()
 	styleClasses := make(map[string]styleClass)
 	properties := graphProperties{
-		data:           data,
-		nodeSpecs:      make(map[string]graphNodeSpec),
-		styleClasses:   &styleClasses,
-		graphDirection: "",
-		styleType:      styleType,
-		paddingX:       paddingBetweenX,
-		paddingY:       paddingBetweenY,
-		subgraphs:      []*textSubgraph{},
+		data:             data,
+		nodeSpecs:        make(map[string]graphNodeSpec),
+		styleClasses:     &styleClasses,
+		boxBorderPadding: boxBorderPadding,
+		graphDirection:   "",
+		styleType:        styleType,
+		paddingX:         paddingBetweenX,
+		paddingY:         paddingBetweenY,
+		subgraphs:        []*textSubgraph{},
 	}
 
 	// Pick up optional padding directives before the graph definition
@@ -314,9 +316,9 @@ func mermaidFileToMap(mermaid, styleType string) (*graphProperties, error) {
 	// First line should either say "graph TD" or "graph LR"
 	switch lines[0] {
 	case "graph LR", "flowchart LR":
-		graphDirection = "LR"
+		properties.graphDirection = "LR"
 	case "graph TD", "flowchart TD", "graph TB", "flowchart TB":
-		graphDirection = "TD"
+		properties.graphDirection = "TD"
 	default:
 		return &properties, fmt.Errorf("unsupported graph type '%s'. Supported types: graph TD, graph TB, graph LR, flowchart TD, flowchart TB, flowchart LR", lines[0])
 	}
