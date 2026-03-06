@@ -112,3 +112,33 @@ func TestMermaidFileToMapParsesSubgraphIDAndTitle(t *testing.T) {
 		t.Fatalf("name = %q, want %q", sg.name, "Frontend Services")
 	}
 }
+
+func TestMermaidFileToMapKeepsExplicitNodeLabelAcrossBareReferences(t *testing.T) {
+	properties, err := mermaidFileToMap("graph TD\nA[\"Foo\"] --> B[\"Bar\"]\nB --> C[\"Baz\"]", "cli")
+	if err != nil {
+		t.Fatalf("mermaidFileToMap() error = %v", err)
+	}
+
+	spec := properties.nodeSpecs["B"]
+	if len(spec.label.lines) != 1 || spec.label.lines[0] != "Bar" {
+		t.Fatalf("label lines = %#v, want [Bar]", spec.label.lines)
+	}
+	if !spec.labelIsExplicit {
+		t.Fatal("expected B label to remain explicit")
+	}
+}
+
+func TestMermaidFileToMapUsesLatestExplicitLabel(t *testing.T) {
+	properties, err := mermaidFileToMap("graph TD\nA[\"Old\"] --> B\nA[\"New\"] --> C", "cli")
+	if err != nil {
+		t.Fatalf("mermaidFileToMap() error = %v", err)
+	}
+
+	spec := properties.nodeSpecs["A"]
+	if len(spec.label.lines) != 1 || spec.label.lines[0] != "New" {
+		t.Fatalf("label lines = %#v, want [New]", spec.label.lines)
+	}
+	if !spec.labelIsExplicit {
+		t.Fatal("expected A label to remain explicit")
+	}
+}

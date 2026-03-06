@@ -28,6 +28,36 @@ func TestRenderGraphKeepsDisplayWidthForWideSubgraphTitles(t *testing.T) {
 	assertUniformDisplayWidth(t, output)
 }
 
+func TestRenderGraphKeepsExplicitTargetLabelAfterBareReference(t *testing.T) {
+	config := diagram.NewTestConfig(true, "cli")
+	output, err := RenderDiagram("graph TD\nA[\"Foo\"] --> B[\"Bar\"]\nB --> C[\"Baz\"]", config)
+	if err != nil {
+		t.Fatalf("RenderDiagram() error = %v", err)
+	}
+
+	if !strings.Contains(output, "Bar") {
+		t.Fatalf("expected output to contain Bar\noutput:\n%s", output)
+	}
+	if strings.Contains(output, "\n|  B  |") || strings.Contains(output, "\n| B |\n") {
+		t.Fatalf("expected B node to keep explicit label\noutput:\n%s", output)
+	}
+}
+
+func TestRenderGraphKeepsStandaloneSubgraphLabelWhenReferencedLater(t *testing.T) {
+	config := diagram.NewTestConfig(true, "cli")
+	output, err := RenderDiagram("graph TD\nsubgraph one\n    A[\"VcpuManager\"]\nend\nA --> B", config)
+	if err != nil {
+		t.Fatalf("RenderDiagram() error = %v", err)
+	}
+
+	if !strings.Contains(output, "VcpuManager") {
+		t.Fatalf("expected output to contain VcpuManager\noutput:\n%s", output)
+	}
+	if strings.Contains(output, "\n| A |\n") || strings.Contains(output, "\n|  A  |\n") {
+		t.Fatalf("expected A node to keep standalone explicit label\noutput:\n%s", output)
+	}
+}
+
 func assertUniformDisplayWidth(t *testing.T, output string) {
 	t.Helper()
 

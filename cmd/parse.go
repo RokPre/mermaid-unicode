@@ -27,12 +27,14 @@ type graphProperties struct {
 type textNode struct {
 	name       string
 	label      graphLabel
+	hasLabel   bool
 	styleClass string
 }
 
 type graphNodeSpec struct {
-	label      graphLabel
-	styleClass string
+	label            graphLabel
+	labelIsExplicit  bool
+	styleClass       string
 }
 
 type textEdge struct {
@@ -121,6 +123,7 @@ func parseNode(line string) textNode {
 		name = strings.TrimSpace(trimmedLine[:open])
 		labelText = strings.TrimSpace(trimmedLine[open+1 : len(trimmedLine)-1])
 		labelText = strings.Trim(labelText, `"`)
+		return textNode{name: name, label: newGraphLabel(labelText), hasLabel: true, styleClass: styleClass}
 	}
 
 	return textNode{name: name, label: newGraphLabel(labelText), styleClass: styleClass}
@@ -155,7 +158,10 @@ func setArrow(lhs, rhs []textNode, gp *graphProperties) []textNode {
 
 func rememberNode(node textNode, nodeSpecs map[string]graphNodeSpec) {
 	spec := nodeSpecs[node.name]
-	spec.label = node.label
+	if node.hasLabel || len(spec.label.lines) == 0 {
+		spec.label = node.label
+		spec.labelIsExplicit = node.hasLabel
+	}
 	if node.styleClass != "" {
 		spec.styleClass = node.styleClass
 	}
