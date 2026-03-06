@@ -237,8 +237,12 @@ func drawBox(n *node, g graph) *drawing {
 		textWidth := runewidth.StringWidth(line)
 		textX := from.x + w/2 - CeilDiv(textWidth, 2) + 1
 		for _, r := range line {
+			runeWidth := Max(runewidth.RuneWidth(r), 1)
 			boxDrawing[textX][textY] = wrapTextInColor(string(r), n.styleClass.styles["color"], g.styleType)
-			textX++
+			for offset := 1; offset < runeWidth; offset++ {
+				boxDrawing[textX+offset][textY] = ""
+			}
+			textX += runeWidth
 		}
 	}
 
@@ -332,10 +336,14 @@ func drawSubgraphLabel(sg *subgraph, g graph) (*drawing, drawingCoord) {
 			labelX = from.x + 1
 		}
 		for _, char := range line {
+			runeWidth := Max(runewidth.RuneWidth(char), 1)
 			if labelX < to.x {
 				labelDrawing[labelX][labelY] = string(char)
 			}
-			labelX++
+			for offset := 1; offset < runeWidth && labelX+offset < to.x; offset++ {
+				labelDrawing[labelX+offset][labelY] = ""
+			}
+			labelX += runeWidth
 		}
 	}
 

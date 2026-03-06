@@ -1,0 +1,45 @@
+package cmd
+
+import (
+	"strings"
+	"testing"
+
+	"github.com/AlexanderGrooff/mermaid-ascii/pkg/diagram"
+	"github.com/mattn/go-runewidth"
+)
+
+func TestRenderGraphKeepsDisplayWidthForWideNodeLabels(t *testing.T) {
+	config := diagram.NewTestConfig(true, "cli")
+	output, err := RenderDiagram("graph LR\nA[\"中A\"] --> B", config)
+	if err != nil {
+		t.Fatalf("RenderDiagram() error = %v", err)
+	}
+
+	assertUniformDisplayWidth(t, output)
+}
+
+func TestRenderGraphKeepsDisplayWidthForWideSubgraphTitles(t *testing.T) {
+	config := diagram.NewTestConfig(true, "cli")
+	output, err := RenderDiagram("graph LR\nsubgraph sg [数据库]\nA --> B\nend", config)
+	if err != nil {
+		t.Fatalf("RenderDiagram() error = %v", err)
+	}
+
+	assertUniformDisplayWidth(t, output)
+}
+
+func assertUniformDisplayWidth(t *testing.T, output string) {
+	t.Helper()
+
+	lines := strings.Split(output, "\n")
+	if len(lines) == 0 {
+		t.Fatal("expected rendered output")
+	}
+
+	want := runewidth.StringWidth(lines[0])
+	for i, line := range lines[1:] {
+		if got := runewidth.StringWidth(line); got != want {
+			t.Fatalf("line %d display width = %d, want %d\noutput:\n%s", i+2, got, want, output)
+		}
+	}
+}
