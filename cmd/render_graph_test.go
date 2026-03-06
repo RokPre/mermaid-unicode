@@ -58,6 +58,21 @@ func TestRenderGraphKeepsStandaloneSubgraphLabelWhenReferencedLater(t *testing.T
 	}
 }
 
+func TestRenderGraphSupportsLiteralNewlineInNodeLabel(t *testing.T) {
+	config := diagram.NewTestConfig(true, "cli")
+	output, err := RenderDiagram("graph LR\nA[\"line1\nline2\"] --> B", config)
+	if err != nil {
+		t.Fatalf("RenderDiagram() error = %v", err)
+	}
+
+	if !strings.Contains(output, "line1") || !strings.Contains(output, "line2") {
+		t.Fatalf("expected output to contain both label lines\noutput:\n%s", output)
+	}
+	if strings.Contains(output, "A[\"line1") || strings.Contains(output, "line2\"]") {
+		t.Fatalf("expected parser to keep literal newline inside the label\noutput:\n%s", output)
+	}
+}
+
 func assertUniformDisplayWidth(t *testing.T, output string) {
 	t.Helper()
 

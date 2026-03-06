@@ -90,9 +90,11 @@ func splitGraphLines(mermaid string) []string {
 				bracketDepth--
 			}
 		case '\n':
-			lines = append(lines, current.String())
-			current.Reset()
-			continue
+			if bracketDepth == 0 {
+				lines = append(lines, current.String())
+				current.Reset()
+				continue
+			}
 		case '\\':
 			if i+1 < len(mermaid) && mermaid[i+1] == 'n' && bracketDepth == 0 {
 				lines = append(lines, current.String())
@@ -212,7 +214,7 @@ func (gp *graphProperties) parseString(line string) ([]textNode, error) {
 			},
 		},
 		{
-			regex: regexp.MustCompile(`^(.+)\s+-->\s+(.+)$`),
+			regex: regexp.MustCompile(`(?s)^(.+)\s+-->\s+(.+)$`),
 			handler: func(match []string) ([]textNode, error) {
 				if lhs, err = gp.parseString(match[0]); err != nil {
 					lhs = []textNode{parseNode(match[0])}
@@ -224,7 +226,7 @@ func (gp *graphProperties) parseString(line string) ([]textNode, error) {
 			},
 		},
 		{
-			regex: regexp.MustCompile(`^(.+)\s+-->\|(.+)\|\s+(.+)$`),
+			regex: regexp.MustCompile(`(?s)^(.+)\s+-->\|(.+)\|\s+(.+)$`),
 			handler: func(match []string) ([]textNode, error) {
 				if lhs, err = gp.parseString(match[0]); err != nil {
 					lhs = []textNode{parseNode(match[0])}
@@ -244,7 +246,7 @@ func (gp *graphProperties) parseString(line string) ([]textNode, error) {
 			},
 		},
 		{
-			regex: regexp.MustCompile(`^(.+) & (.+)$`),
+			regex: regexp.MustCompile(`(?s)^(.+) & (.+)$`),
 			handler: func(match []string) ([]textNode, error) {
 				log.Debugf("Found & pattern node %v to %v", match[0], match[1])
 				var node textNode

@@ -19,6 +19,23 @@ func TestSplitGraphLines(t *testing.T) {
 	}
 }
 
+func TestSplitGraphLinesKeepsLiteralNewlineInsideNodeLabel(t *testing.T) {
+	input := "graph LR\nA[\"line1\nline2\"] --> B\nC --> D"
+
+	got := splitGraphLines(input)
+	want := []string{"graph LR", "A[\"line1\nline2\"] --> B", "C --> D"}
+
+	if len(got) != len(want) {
+		t.Fatalf("line count = %d, want %d", len(got), len(want))
+	}
+
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("line %d = %q, want %q", i, got[i], want[i])
+		}
+	}
+}
+
 func TestParseNodeWithExplicitLabel(t *testing.T) {
 	node := parseNode(`A["line1<br/>line2"]:::primary`)
 
@@ -38,6 +55,21 @@ func TestParseNodeWithExplicitLabel(t *testing.T) {
 
 func TestMermaidFileToMapPreservesEscapedLabelNewlines(t *testing.T) {
 	properties, err := mermaidFileToMap("graph LR\\nA[\"line1\\nline2\"] --> B", "cli")
+	if err != nil {
+		t.Fatalf("mermaidFileToMap() error = %v", err)
+	}
+
+	spec := properties.nodeSpecs["A"]
+	if len(spec.label.lines) != 2 {
+		t.Fatalf("label lines = %d, want 2", len(spec.label.lines))
+	}
+	if spec.label.lines[0] != "line1" || spec.label.lines[1] != "line2" {
+		t.Fatalf("label lines = %#v, want [line1 line2]", spec.label.lines)
+	}
+}
+
+func TestMermaidFileToMapPreservesLiteralLabelNewlines(t *testing.T) {
+	properties, err := mermaidFileToMap("graph LR\nA[\"line1\nline2\"] --> B", "cli")
 	if err != nil {
 		t.Fatalf("mermaidFileToMap() error = %v", err)
 	}
