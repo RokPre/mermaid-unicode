@@ -17,11 +17,26 @@ type edge struct {
 }
 
 func (g *graph) determinePath(e *edge) {
+	key := newEdgePair(e.from.index, e.to.index)
+	duplicateIndex := g.edgeCounts[key]
+
+	if startDir, endDir, ok := g.parallelDirections(e, duplicateIndex); ok {
+		from := e.from.gridCoord.Direction(startDir)
+		to := e.to.gridCoord.Direction(endDir)
+		if path, err := g.getPath(from, to); err == nil {
+			e.startDir = startDir
+			e.endDir = endDir
+			e.path = mergePath(path)
+			g.edgeCounts[key]++
+			return
+		}
+	}
+
 	// Get both paths and use least amount of steps
 	var preferredPath, alternativePath []gridCoord
 	var from, to gridCoord
 	var err error
-	preferredDir, preferredOppositeDir, alternativeDir, alternativeOppositeDir := determineStartAndEndDir(e)
+	preferredDir, preferredOppositeDir, alternativeDir, alternativeOppositeDir := g.determineStartAndEndDir(e)
 
 	from = e.from.gridCoord.Direction(preferredDir)
 	to = e.to.gridCoord.Direction(preferredOppositeDir)
@@ -66,6 +81,29 @@ func (g *graph) determinePath(e *edge) {
 		e.endDir = alternativeOppositeDir
 		e.path = alternativePath
 	}
+	g.edgeCounts[key]++
+}
+
+func (g *graph) parallelDirections(e *edge, duplicateIndex int) (direction, direction, bool) {
+	if duplicateIndex == 0 {
+		return Middle, Middle, false
+	}
+
+	dir := determineDirection(genericCoord(*e.from.gridCoord), genericCoord(*e.to.gridCoord))
+	switch {
+	case g.graphDirection == "LR" && (dir == Right || dir == Left):
+		options := [][2]direction{{Down, Down}, {Up, Up}}
+		if duplicateIndex-1 < len(options) {
+			return options[duplicateIndex-1][0], options[duplicateIndex-1][1], true
+		}
+	case g.graphDirection == "TD" && (dir == Down || dir == Up):
+		options := [][2]direction{{Right, Right}, {Left, Left}}
+		if duplicateIndex-1 < len(options) {
+			return options[duplicateIndex-1][0], options[duplicateIndex-1][1], true
+		}
+	}
+
+	return Middle, Middle, false
 }
 
 func (g *graph) determineLabelLine(e *edge) {

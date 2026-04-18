@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gookit/color"
+	"github.com/mattn/go-runewidth"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -151,7 +152,7 @@ func (g *graph) drawLine(d *drawing, from drawingCoord, to drawingCoord, offsetF
 }
 
 func drawMap(properties *graphProperties) string {
-	g := mkGraph(properties.data)
+	g := mkGraph(properties.data, properties.nodeSpecs)
 	g.setStyleClasses(properties)
 	g.paddingX = properties.paddingX
 	g.paddingY = properties.paddingY
@@ -227,11 +228,22 @@ func drawBox(n *node, g graph) *drawing {
 		boxDrawing[from.x][to.y] = "+"   // Bottom left corner
 		boxDrawing[to.x][to.y] = "+"     // Bottom right corner
 	}
-	// Draw text
-	textY := from.y + h/2
-	textX := from.x + w/2 - CeilDiv(len(n.name), 2) + 1
-	for x := 0; x < len(n.name); x++ {
-		boxDrawing[textX+x][textY] = wrapTextInColor(string(n.name[x]), n.styleClass.styles["color"], g.styleType)
+	// Draw label lines inside the padded content area.
+	innerTop := from.y + 1
+	innerHeight := h - 1
+	contentTop := innerTop + (innerHeight-n.label.contentHeight())/2
+	for lineIdx, line := range n.label.lines {
+		textY := contentTop + lineIdx*(graphLabelLineGap+1)
+		textWidth := runewidth.StringWidth(line)
+		textX := from.x + w/2 - CeilDiv(textWidth, 2) + 1
+		for _, r := range line {
+			runeWidth := Max(runewidth.RuneWidth(r), 1)
+			boxDrawing[textX][textY] = wrapTextInColor(string(r), n.styleClass.styles["color"], g.styleType)
+			for offset := 1; offset < runeWidth; offset++ {
+				boxDrawing[textX+offset][textY] = ""
+			}
+			textX += runeWidth
+		}
 	}
 
 	return &boxDrawing
@@ -316,15 +328,22 @@ func drawSubgraphLabel(sg *subgraph, g graph) (*drawing, drawingCoord) {
 	to := drawingCoord{width, height}
 	labelDrawing := *(mkDrawing(width, height))
 
-	// Draw label centered at top
-	labelY := from.y + 1
-	labelX := from.x + width/2 - len(sg.name)/2
-	if labelX < from.x+1 {
-		labelX = from.x + 1
-	}
-	for i, char := range sg.name {
-		if labelX+i < to.x {
-			labelDrawing[labelX+i][labelY] = string(char)
+	// Draw label centered at top.
+	for lineIdx, line := range sg.label.lines {
+		labelY := from.y + 1 + lineIdx*(graphLabelLineGap+1)
+		labelX := from.x + width/2 - runewidth.StringWidth(line)/2
+		if labelX < from.x+1 {
+			labelX = from.x + 1
+		}
+		for _, char := range line {
+			runeWidth := Max(runewidth.RuneWidth(char), 1)
+			if labelX < to.x {
+				labelDrawing[labelX][labelY] = string(char)
+			}
+			for offset := 1; offset < runeWidth && labelX+offset < to.x; offset++ {
+				labelDrawing[labelX+offset][labelY] = ""
+			}
+			labelX += runeWidth
 		}
 	}
 

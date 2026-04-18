@@ -30,24 +30,40 @@ func (g graph) lineToDrawing(line []gridCoord) []drawingCoord {
 }
 
 type graph struct {
-	nodes        []*node
-	edges        []*edge
-	drawing      *drawing
-	grid         map[gridCoord]*node
-	columnWidth  map[int]int
-	rowHeight    map[int]int
-	styleClasses map[string]styleClass
-	styleType    string
-	paddingX     int
-	paddingY     int
-	subgraphs    []*subgraph
-	offsetX      int
-	offsetY      int
-	useAscii     bool
+	nodes            []*node
+	edges            []*edge
+	drawing          *drawing
+	grid             map[gridCoord]*node
+	edgeCounts       map[edgePair]int
+	columnWidth      map[int]int
+	rowHeight        map[int]int
+	styleClasses     map[string]styleClass
+	styleType        string
+	boxBorderPadding int
+	graphDirection   string
+	paddingX         int
+	paddingY         int
+	subgraphs        []*subgraph
+	offsetX          int
+	offsetY          int
+	useAscii         bool
+}
+
+type edgePair struct {
+	from int
+	to   int
+}
+
+func newEdgePair(from, to int) edgePair {
+	if from < to {
+		return edgePair{from: from, to: to}
+	}
+	return edgePair{from: to, to: from}
 }
 
 type subgraph struct {
 	name     string
+	label    graphLabel
 	nodes    []*node
 	parent   *subgraph
 	children []*subgraph
@@ -58,9 +74,10 @@ type subgraph struct {
 	maxY int
 }
 
-func mkGraph(data *orderedmap.OrderedMap[string, []textEdge]) graph {
+func mkGraph(data *orderedmap.OrderedMap[string, []textEdge], nodeSpecs map[string]graphNodeSpec) graph {
 	g := graph{drawing: mkDrawing(0, 0)}
 	g.grid = make(map[gridCoord]*node)
+	g.edgeCounts = make(map[edgePair]int)
 	g.columnWidth = make(map[int]int)
 	g.rowHeight = make(map[int]int)
 	g.styleClasses = make(map[string]styleClass)
@@ -68,18 +85,19 @@ func mkGraph(data *orderedmap.OrderedMap[string, []textEdge]) graph {
 	for el := data.Front(); el != nil; el = el.Next() {
 		nodeName := el.Key
 		children := el.Value
+		spec := nodeSpecs[nodeName]
 		// Get or create parent node
 		parentNode, err := g.getNode(nodeName)
 		if err != nil {
-			parentNode = &node{name: nodeName, index: index, styleClassName: ""}
+			parentNode = &node{name: nodeName, label: spec.label, index: index, styleClassName: spec.styleClass}
 			g.appendNode(parentNode)
 			index += 1
 		}
 		for _, textEdge := range children {
+			childSpec := nodeSpecs[textEdge.child.name]
 			childNode, err := g.getNode(textEdge.child.name)
 			if err != nil {
-				childNode = &node{name: textEdge.child.name, index: index, styleClassName: textEdge.child.styleClass}
-				parentNode.styleClassName = textEdge.parent.styleClass
+				childNode = &node{name: textEdge.child.name, label: childSpec.label, index: index, styleClassName: childSpec.styleClass}
 				g.appendNode(childNode)
 				index += 1
 			}
@@ -94,6 +112,8 @@ func (g *graph) setStyleClasses(properties *graphProperties) {
 	log.Debugf("Setting style classes to %v", properties.styleClasses)
 	g.styleClasses = *properties.styleClasses
 	g.styleType = properties.styleType
+	g.boxBorderPadding = properties.boxBorderPadding
+	g.graphDirection = properties.graphDirection
 	g.paddingX = properties.paddingX
 	g.paddingY = properties.paddingY
 	for _, n := range g.nodes {
@@ -111,6 +131,7 @@ func (g *graph) setSubgraphs(textSubgraphs []*textSubgraph) {
 	for _, tsg := range textSubgraphs {
 		sg := &subgraph{
 			name:     tsg.name,
+			label:    tsg.label,
 			nodes:    []*node{},
 			children: []*subgraph{},
 		}
@@ -194,7 +215,7 @@ func (g *graph) createMapping() {
 
 	// Separate root nodes by whether they're in subgraphs, but only if we have both types
 	// AND there are edges in subgraphs (indicating intentional layout structure)
-	shouldSeparate := graphDirection == "LR" && hasExternalRoots && hasSubgraphRootsWithEdges
+	shouldSeparate := g.graphDirection == "LR" && hasExternalRoots && hasSubgraphRootsWithEdges
 
 	externalRootNodes := []*node{}
 	subgraphRootNodes := []*node{}
@@ -214,7 +235,7 @@ func (g *graph) createMapping() {
 	// Place external root nodes first at level 0
 	for _, n := range externalRootNodes {
 		var mappingCoord *gridCoord
-		if graphDirection == "LR" {
+		if g.graphDirection == "LR" {
 			mappingCoord = g.reserveSpotInGrid(g.nodes[n.index], &gridCoord{x: 0, y: highestPositionPerLevel[0]})
 		} else {
 			mappingCoord = g.reserveSpotInGrid(g.nodes[n.index], &gridCoord{x: highestPositionPerLevel[0], y: 0})
@@ -230,7 +251,7 @@ func (g *graph) createMapping() {
 		subgraphLevel := 4
 		for _, n := range subgraphRootNodes {
 			var mappingCoord *gridCoord
-			if graphDirection == "LR" {
+			if g.graphDirection == "LR" {
 				mappingCoord = g.reserveSpotInGrid(g.nodes[n.index], &gridCoord{x: subgraphLevel, y: highestPositionPerLevel[subgraphLevel]})
 			} else {
 				mappingCoord = g.reserveSpotInGrid(g.nodes[n.index], &gridCoord{x: highestPositionPerLevel[subgraphLevel], y: subgraphLevel})
@@ -245,7 +266,7 @@ func (g *graph) createMapping() {
 		log.Debugf("Creating mapping for node %s at %v", n.name, n.gridCoord)
 		var childLevel int
 		// Next column is 4 coords further. This is because every node is 3 coords wide + 1 coord inbetween.
-		if graphDirection == "LR" {
+		if g.graphDirection == "LR" {
 			childLevel = n.gridCoord.x + 4
 		} else {
 			childLevel = n.gridCoord.y + 4
@@ -258,7 +279,7 @@ func (g *graph) createMapping() {
 			}
 
 			var mappingCoord *gridCoord
-			if graphDirection == "LR" {
+			if g.graphDirection == "LR" {
 				mappingCoord = g.reserveSpotInGrid(g.nodes[child.index], &gridCoord{x: childLevel, y: highestPosition})
 			} else {
 				mappingCoord = g.reserveSpotInGrid(g.nodes[child.index], &gridCoord{x: highestPosition, y: childLevel})
@@ -471,9 +492,18 @@ func (g *graph) calculateSubgraphBoundingBox(sg *subgraph) {
 		maxY = Max(maxY, nodeMaxY)
 	}
 
+	// Ensure the title fits inside the frame after padding is applied.
+	currentWidth := maxX - minX
+	currentInnerWidth := currentWidth + 3
+	if currentInnerWidth < sg.label.width {
+		extraWidth := sg.label.width - currentInnerWidth
+		minX -= extraWidth / 2
+		maxX += extraWidth - (extraWidth / 2)
+	}
+
 	// Add padding (allow negative coordinates, we'll offset later)
 	const subgraphPadding = 2
-	const subgraphLabelSpace = 2 // Extra space for label at top
+	subgraphLabelSpace := sg.label.contentHeight() + 1
 	sg.minX = minX - subgraphPadding
 	sg.minY = minY - subgraphPadding - subgraphLabelSpace
 	sg.maxX = maxX + subgraphPadding
