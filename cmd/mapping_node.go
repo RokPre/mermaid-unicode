@@ -5,15 +5,17 @@ import (
 )
 
 type node struct {
-	name           string
-	label          graphLabel
-	drawing        *drawing
-	drawingCoord   *drawingCoord
-	gridCoord      *gridCoord
-	drawn          bool
-	index          int // Index of the node in the graph.nodes slice
-	styleClassName string
-	styleClass     styleClass
+	name            string
+	label           graphLabel
+	shape           graphNodeShape
+	shapeIsExplicit bool
+	drawing         *drawing
+	drawingCoord    *drawingCoord
+	gridCoord       *gridCoord
+	drawn           bool
+	index           int // Index of the node in the graph.nodes slice
+	styleClassName  string
+	styleClass      styleClass
 }
 
 func (n node) String() string {
@@ -30,6 +32,15 @@ func (n *node) setDrawing(g graph) *drawing {
 	return d
 }
 
+func (n *node) shapeHorizontalPadding() int {
+	switch n.shape {
+	case graphNodeShapeStadium, graphNodeShapeCircle, graphNodeShapeDecision, graphNodeShapeHexagon, graphNodeShapeParallelogram, graphNodeShapeDatabase:
+		return 2
+	default:
+		return 0
+	}
+}
+
 func (g *graph) setColumnWidth(n *node) {
 	// For every node there are three columns:
 	// - 2 lines of border
@@ -37,7 +48,7 @@ func (g *graph) setColumnWidth(n *node) {
 	// - 2x padding
 	// - 2x margin
 	col1 := 1
-	col2 := 2*g.boxBorderPadding + n.label.width
+	col2 := 2*g.boxBorderPadding + n.label.width + n.shapeHorizontalPadding()
 	col3 := 1
 	colsToBePlaced := []int{col1, col2, col3}
 	rowsToBePlaced := []int{1, n.label.contentHeight() + 2*g.boxBorderPadding, 1} // Border, padding + content, border

@@ -17,6 +17,8 @@ type graphProperties struct {
 	styleClasses     *map[string]styleClass
 	boxBorderPadding int
 	graphDirection   string
+	graphBoxStyle    string
+	graphEdgeStyle   graphEdgeLineStyle
 	styleType        string
 	paddingX         int
 	paddingY         int
@@ -28,19 +30,48 @@ type textNode struct {
 	name       string
 	label      graphLabel
 	hasLabel   bool
+	shape      graphNodeShape
+	hasShape   bool
 	styleClass string
 }
+
+type graphNodeShape string
+
+const (
+	graphNodeShapeSquare        graphNodeShape = "square"
+	graphNodeShapeRounded       graphNodeShape = "rounded"
+	graphNodeShapeStadium       graphNodeShape = "stadium"
+	graphNodeShapeDouble        graphNodeShape = "double"
+	graphNodeShapeDatabase      graphNodeShape = "database"
+	graphNodeShapeCircle        graphNodeShape = "circle"
+	graphNodeShapeDecision      graphNodeShape = "decision"
+	graphNodeShapeHexagon       graphNodeShape = "hexagon"
+	graphNodeShapeParallelogram graphNodeShape = "parallelogram"
+)
 
 type graphNodeSpec struct {
 	label           graphLabel
 	labelIsExplicit bool
+	shape           graphNodeShape
+	shapeIsExplicit bool
 	styleClass      string
 }
 
+type graphEdgeLineStyle string
+
+const (
+	graphEdgeLineStyleLight  graphEdgeLineStyle = "light"
+	graphEdgeLineStyleHeavy  graphEdgeLineStyle = "heavy"
+	graphEdgeLineStyleDashed graphEdgeLineStyle = "dashed"
+)
+
 type textEdge struct {
-	parent textNode
-	child  textNode
-	label  string
+	parent       textNode
+	child        textNode
+	label        string
+	lineStyle    graphEdgeLineStyle
+	lineStyleSet bool
+	hasArrowHead bool
 }
 
 type textSubgraph struct {
@@ -121,14 +152,43 @@ func parseNode(line string) textNode {
 
 	name := trimmedLine
 	labelText := trimmedLine
-	if open := strings.Index(trimmedLine, "["); open > 0 && strings.HasSuffix(trimmedLine, "]") {
-		name = strings.TrimSpace(trimmedLine[:open])
-		labelText = strings.TrimSpace(trimmedLine[open+1 : len(trimmedLine)-1])
-		labelText = strings.Trim(labelText, `"`)
-		return textNode{name: name, label: newGraphLabel(labelText), hasLabel: true, styleClass: styleClass}
+	for _, shape := range nodeShapeSyntaxes() {
+		if open := strings.Index(trimmedLine, shape.open); open > 0 && strings.HasSuffix(trimmedLine, shape.close) {
+			name = strings.TrimSpace(trimmedLine[:open])
+			labelText = strings.TrimSpace(trimmedLine[open+len(shape.open) : len(trimmedLine)-len(shape.close)])
+			labelText = strings.Trim(labelText, `"`)
+			return textNode{
+				name:       name,
+				label:      newGraphLabel(labelText),
+				hasLabel:   true,
+				shape:      shape.shape,
+				hasShape:   true,
+				styleClass: styleClass,
+			}
+		}
 	}
 
 	return textNode{name: name, label: newGraphLabel(labelText), styleClass: styleClass}
+}
+
+type nodeShapeSyntax struct {
+	open  string
+	close string
+	shape graphNodeShape
+}
+
+func nodeShapeSyntaxes() []nodeShapeSyntax {
+	return []nodeShapeSyntax{
+		{open: "([", close: "])", shape: graphNodeShapeStadium},
+		{open: "[[", close: "]]", shape: graphNodeShapeDouble},
+		{open: "[(", close: ")]", shape: graphNodeShapeDatabase},
+		{open: "((", close: "))", shape: graphNodeShapeCircle},
+		{open: "{{", close: "}}", shape: graphNodeShapeHexagon},
+		{open: "[/", close: "/]", shape: graphNodeShapeParallelogram},
+		{open: "[", close: "]", shape: graphNodeShapeSquare},
+		{open: "(", close: ")", shape: graphNodeShapeRounded},
+		{open: "{", close: "}", shape: graphNodeShapeDecision},
+	}
 }
 
 func parseStyleClass(matchedLine []string) styleClass {
@@ -144,14 +204,25 @@ func parseStyleClass(matchedLine []string) styleClass {
 	return styleClass{className, styleMap}
 }
 
-func setArrowWithLabel(lhs, rhs []textNode, label string, gp *graphProperties) []textNode {
+func setEdgeWithLabel(lhs, rhs []textNode, label string, lineStyle graphEdgeLineStyle, hasArrowHead bool, gp *graphProperties) []textNode {
 	log.Debug("Setting arrow from ", lhs, " to ", rhs, " with label ", label)
 	for _, l := range lhs {
 		for _, r := range rhs {
-			setData(l, textEdge{l, r, label}, gp.data, gp.nodeSpecs)
+			setData(l, textEdge{
+				parent:       l,
+				child:        r,
+				label:        label,
+				lineStyle:    lineStyle,
+				lineStyleSet: lineStyle != graphEdgeLineStyleLight,
+				hasArrowHead: hasArrowHead,
+			}, gp.data, gp.nodeSpecs)
 		}
 	}
 	return rhs
+}
+
+func setArrowWithLabel(lhs, rhs []textNode, label string, gp *graphProperties) []textNode {
+	return setEdgeWithLabel(lhs, rhs, label, graphEdgeLineStyleLight, true, gp)
 }
 
 func setArrow(lhs, rhs []textNode, gp *graphProperties) []textNode {
@@ -163,6 +234,14 @@ func rememberNode(node textNode, nodeSpecs map[string]graphNodeSpec) {
 	if node.hasLabel || len(spec.label.lines) == 0 {
 		spec.label = node.label
 		spec.labelIsExplicit = node.hasLabel
+	}
+	if node.hasShape || spec.shape == "" {
+		if node.hasShape {
+			spec.shape = node.shape
+		} else {
+			spec.shape = graphNodeShapeSquare
+		}
+		spec.shapeIsExplicit = node.hasShape
 	}
 	if node.styleClass != "" {
 		spec.styleClass = node.styleClass
@@ -211,6 +290,66 @@ func (gp *graphProperties) parseString(line string) ([]textNode, error) {
 			handler: func(match []string) ([]textNode, error) {
 				// Ignore empty lines
 				return []textNode{}, nil
+			},
+		},
+		{
+			regex: regexp.MustCompile(`(?s)^(.+)\s+==>\s+(.+)$`),
+			handler: func(match []string) ([]textNode, error) {
+				if lhs, err = gp.parseString(match[0]); err != nil {
+					lhs = []textNode{parseNode(match[0])}
+				}
+				if rhs, err = gp.parseString(match[1]); err != nil {
+					rhs = []textNode{parseNode(match[1])}
+				}
+				return setEdgeWithLabel(lhs, rhs, "", graphEdgeLineStyleHeavy, true, gp), nil
+			},
+		},
+		{
+			regex: regexp.MustCompile(`(?s)^(.+)\s+==>\|(.+)\|\s+(.+)$`),
+			handler: func(match []string) ([]textNode, error) {
+				if lhs, err = gp.parseString(match[0]); err != nil {
+					lhs = []textNode{parseNode(match[0])}
+				}
+				if rhs, err = gp.parseString(match[2]); err != nil {
+					rhs = []textNode{parseNode(match[2])}
+				}
+				return setEdgeWithLabel(lhs, rhs, match[1], graphEdgeLineStyleHeavy, true, gp), nil
+			},
+		},
+		{
+			regex: regexp.MustCompile(`(?s)^(.+)\s+-\.->\s+(.+)$`),
+			handler: func(match []string) ([]textNode, error) {
+				if lhs, err = gp.parseString(match[0]); err != nil {
+					lhs = []textNode{parseNode(match[0])}
+				}
+				if rhs, err = gp.parseString(match[1]); err != nil {
+					rhs = []textNode{parseNode(match[1])}
+				}
+				return setEdgeWithLabel(lhs, rhs, "", graphEdgeLineStyleDashed, true, gp), nil
+			},
+		},
+		{
+			regex: regexp.MustCompile(`(?s)^(.+)\s+-\.->\|(.+)\|\s+(.+)$`),
+			handler: func(match []string) ([]textNode, error) {
+				if lhs, err = gp.parseString(match[0]); err != nil {
+					lhs = []textNode{parseNode(match[0])}
+				}
+				if rhs, err = gp.parseString(match[2]); err != nil {
+					rhs = []textNode{parseNode(match[2])}
+				}
+				return setEdgeWithLabel(lhs, rhs, match[1], graphEdgeLineStyleDashed, true, gp), nil
+			},
+		},
+		{
+			regex: regexp.MustCompile(`(?s)^(.+)\s+-\.-\s+(.+)$`),
+			handler: func(match []string) ([]textNode, error) {
+				if lhs, err = gp.parseString(match[0]); err != nil {
+					lhs = []textNode{parseNode(match[0])}
+				}
+				if rhs, err = gp.parseString(match[1]); err != nil {
+					rhs = []textNode{parseNode(match[1])}
+				}
+				return setEdgeWithLabel(lhs, rhs, "", graphEdgeLineStyleDashed, false, gp), nil
 			},
 		},
 		{

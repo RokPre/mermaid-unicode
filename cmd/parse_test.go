@@ -51,6 +51,50 @@ func TestParseNodeWithExplicitLabel(t *testing.T) {
 	if node.label.lines[0] != "line1" || node.label.lines[1] != "line2" {
 		t.Fatalf("label lines = %#v, want [line1 line2]", node.label.lines)
 	}
+	if node.shape != graphNodeShapeSquare {
+		t.Fatalf("shape = %q, want %q", node.shape, graphNodeShapeSquare)
+	}
+	if !node.hasShape {
+		t.Fatal("expected square bracket node to have explicit shape")
+	}
+}
+
+func TestParseNodeShapes(t *testing.T) {
+	tests := []struct {
+		input     string
+		wantName  string
+		wantLabel string
+		wantShape graphNodeShape
+	}{
+		{input: `A[Text]`, wantName: "A", wantLabel: "Text", wantShape: graphNodeShapeSquare},
+		{input: `A(Text)`, wantName: "A", wantLabel: "Text", wantShape: graphNodeShapeRounded},
+		{input: `A([Text])`, wantName: "A", wantLabel: "Text", wantShape: graphNodeShapeStadium},
+		{input: `A[[Text]]`, wantName: "A", wantLabel: "Text", wantShape: graphNodeShapeDouble},
+		{input: `A[(Text)]`, wantName: "A", wantLabel: "Text", wantShape: graphNodeShapeDatabase},
+		{input: `A((Text))`, wantName: "A", wantLabel: "Text", wantShape: graphNodeShapeCircle},
+		{input: `A{Text}`, wantName: "A", wantLabel: "Text", wantShape: graphNodeShapeDecision},
+		{input: `A{{Text}}`, wantName: "A", wantLabel: "Text", wantShape: graphNodeShapeHexagon},
+		{input: `A[/Text/]`, wantName: "A", wantLabel: "Text", wantShape: graphNodeShapeParallelogram},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			node := parseNode(tt.input)
+
+			if node.name != tt.wantName {
+				t.Fatalf("name = %q, want %q", node.name, tt.wantName)
+			}
+			if len(node.label.lines) != 1 || node.label.lines[0] != tt.wantLabel {
+				t.Fatalf("label lines = %#v, want [%s]", node.label.lines, tt.wantLabel)
+			}
+			if node.shape != tt.wantShape {
+				t.Fatalf("shape = %q, want %q", node.shape, tt.wantShape)
+			}
+			if !node.hasShape {
+				t.Fatal("expected node to have explicit shape")
+			}
+		})
+	}
 }
 
 func TestMermaidFileToMapPreservesEscapedLabelNewlines(t *testing.T) {
@@ -172,5 +216,68 @@ func TestMermaidFileToMapUsesLatestExplicitLabel(t *testing.T) {
 	}
 	if !spec.labelIsExplicit {
 		t.Fatal("expected A label to remain explicit")
+	}
+}
+
+func TestMermaidFileToMapKeepsExplicitNodeShapeAcrossBareReferences(t *testing.T) {
+	properties, err := mermaidFileToMap("graph TD\nA(Rounded) --> B\nA --> C", "cli")
+	if err != nil {
+		t.Fatalf("mermaidFileToMap() error = %v", err)
+	}
+
+	spec := properties.nodeSpecs["A"]
+	if spec.shape != graphNodeShapeRounded {
+		t.Fatalf("shape = %q, want %q", spec.shape, graphNodeShapeRounded)
+	}
+	if !spec.shapeIsExplicit {
+		t.Fatal("expected A shape to remain explicit")
+	}
+}
+
+func TestMermaidFileToMapParsesEdgeLineStyles(t *testing.T) {
+	properties, err := mermaidFileToMap("graph LR\nA ==> B\nA ==>|heavy| C\nA -.-> D\nA -.->|dash| E\nA -.- F", "cli")
+	if err != nil {
+		t.Fatalf("mermaidFileToMap() error = %v", err)
+	}
+
+	edges, ok := properties.data.Get("A")
+	if !ok {
+		t.Fatal("expected node A to have outgoing edges")
+	}
+
+	byChild := map[string]textEdge{}
+	for _, edge := range edges {
+		byChild[edge.child.name] = edge
+	}
+
+	tests := []struct {
+		child            string
+		wantStyle        graphEdgeLineStyle
+		wantLabel        string
+		wantHasArrowHead bool
+	}{
+		{child: "B", wantStyle: graphEdgeLineStyleHeavy, wantHasArrowHead: true},
+		{child: "C", wantStyle: graphEdgeLineStyleHeavy, wantLabel: "heavy", wantHasArrowHead: true},
+		{child: "D", wantStyle: graphEdgeLineStyleDashed, wantHasArrowHead: true},
+		{child: "E", wantStyle: graphEdgeLineStyleDashed, wantLabel: "dash", wantHasArrowHead: true},
+		{child: "F", wantStyle: graphEdgeLineStyleDashed, wantHasArrowHead: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.child, func(t *testing.T) {
+			edge, ok := byChild[tt.child]
+			if !ok {
+				t.Fatalf("missing edge to %s", tt.child)
+			}
+			if edge.lineStyle != tt.wantStyle {
+				t.Fatalf("lineStyle = %q, want %q", edge.lineStyle, tt.wantStyle)
+			}
+			if edge.label != tt.wantLabel {
+				t.Fatalf("label = %q, want %q", edge.label, tt.wantLabel)
+			}
+			if edge.hasArrowHead != tt.wantHasArrowHead {
+				t.Fatalf("hasArrowHead = %v, want %v", edge.hasArrowHead, tt.wantHasArrowHead)
+			}
+		})
 	}
 }

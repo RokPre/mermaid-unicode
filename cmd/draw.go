@@ -9,24 +9,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var junctionChars = []string{
-	"─", // Horizontal line
-	"│", // Vertical line
-	"┌", // Top-left corner
-	"┐", // Top-right corner
-	"└", // Bottom-left corner
-	"┘", // Bottom-right corner
-	"├", // T-junction pointing right
-	"┤", // T-junction pointing left
-	"┬", // T-junction pointing down
-	"┴", // T-junction pointing up
-	"┼", // Cross junction
-	"╴", // Left end of horizontal line
-	"╵", // Top end of vertical line
-	"╶", // Right end of horizontal line
-	"╷", // Bottom end of vertical line
-}
-
 type drawing [][]string
 
 type styleClass struct {
@@ -56,96 +38,51 @@ func (d *drawing) drawText(start drawingCoord, text string) {
 	}
 }
 
-func (g *graph) drawLine(d *drawing, from drawingCoord, to drawingCoord, offsetFrom int, offsetTo int) []drawingCoord {
+func (g *graph) drawLine(d *drawing, from drawingCoord, to drawingCoord, offsetFrom int, offsetTo int, chars graphLineChars) []drawingCoord {
 	// Offset determines how far from the actual coord the line should start/stop.
 	direction := determineDirection(genericCoord(from), genericCoord(to))
 	drawnCoords := make([]drawingCoord, 0)
 	log.Debug("Drawing line from ", from, " to ", to, " direction: ", direction, " offsetFrom: ", offsetFrom, " offsetTo: ", offsetTo)
-	if !g.useAscii {
-		switch direction {
-		case Up:
-			for y := from.y - offsetFrom; y >= to.y-offsetTo; y-- {
-				drawnCoords = append(drawnCoords, drawingCoord{from.x, y})
-				(*d)[from.x][y] = "│"
-			}
-		case Down:
-			for y := from.y + offsetFrom; y <= to.y+offsetTo; y++ {
-				drawnCoords = append(drawnCoords, drawingCoord{from.x, y})
-				(*d)[from.x][y] = "│"
-			}
-		case Left:
-			for x := from.x - offsetFrom; x >= to.x-offsetTo; x-- {
-				drawnCoords = append(drawnCoords, drawingCoord{x, from.y})
-				(*d)[x][from.y] = "─"
-			}
-		case Right:
-			for x := from.x + offsetFrom; x <= to.x+offsetTo; x++ {
-				drawnCoords = append(drawnCoords, drawingCoord{x, from.y})
-				(*d)[x][from.y] = "─"
-			}
-		case UpperLeft:
-			for x, y := from.x, from.y-offsetFrom; x >= to.x-offsetTo && y >= to.y-offsetTo; x, y = x-1, y-1 {
-				drawnCoords = append(drawnCoords, drawingCoord{x, y})
-				(*d)[x][y] = "╲"
-			}
-		case UpperRight:
-			for x, y := from.x, from.y-offsetFrom; x <= to.x+offsetTo && y >= to.y-offsetTo; x, y = x+1, y-1 {
-				drawnCoords = append(drawnCoords, drawingCoord{x, y})
-				(*d)[x][y] = "╱"
-			}
-		case LowerLeft:
-			for x, y := from.x, from.y+offsetFrom; x >= to.x-offsetTo && y <= to.y+offsetTo; x, y = x-1, y+1 {
-				drawnCoords = append(drawnCoords, drawingCoord{x, y})
-				(*d)[x][y] = "╱"
-			}
-		case LowerRight:
-			for x, y := from.x, from.y+offsetFrom; x <= to.x+offsetTo && y <= to.y+offsetTo; x, y = x+1, y+1 {
-				drawnCoords = append(drawnCoords, drawingCoord{x, y})
-				(*d)[x][y] = "╲"
-			}
+	switch direction {
+	case Up:
+		for y := from.y - offsetFrom; y >= to.y-offsetTo; y-- {
+			drawnCoords = append(drawnCoords, drawingCoord{from.x, y})
+			(*d)[from.x][y] = chars.vertical
 		}
-	} else {
-		switch direction {
-		case Up:
-			for y := from.y - offsetFrom; y >= to.y-offsetTo; y-- {
-				drawnCoords = append(drawnCoords, drawingCoord{from.x, y})
-				(*d)[from.x][y] = "|"
-			}
-		case Down:
-			for y := from.y + offsetFrom; y <= to.y+offsetTo; y++ {
-				drawnCoords = append(drawnCoords, drawingCoord{from.x, y})
-				(*d)[from.x][y] = "|"
-			}
-		case Left:
-			for x := from.x - offsetFrom; x >= to.x-offsetTo; x-- {
-				drawnCoords = append(drawnCoords, drawingCoord{x, from.y})
-				(*d)[x][from.y] = "-"
-			}
-		case Right:
-			for x := from.x + offsetFrom; x <= to.x+offsetTo; x++ {
-				drawnCoords = append(drawnCoords, drawingCoord{x, from.y})
-				(*d)[x][from.y] = "-"
-			}
-		case UpperLeft:
-			for x, y := from.x, from.y-offsetFrom; x >= to.x-offsetTo && y >= to.y-offsetTo; x, y = x-1, y-1 {
-				drawnCoords = append(drawnCoords, drawingCoord{x, y})
-				(*d)[x][y] = "\\"
-			}
-		case UpperRight:
-			for x, y := from.x, from.y-offsetFrom; x <= to.x+offsetTo && y >= to.y-offsetTo; x, y = x+1, y-1 {
-				drawnCoords = append(drawnCoords, drawingCoord{x, y})
-				(*d)[x][y] = "/"
-			}
-		case LowerLeft:
-			for x, y := from.x, from.y+offsetFrom; x >= to.x-offsetTo && y <= to.y+offsetTo; x, y = x-1, y+1 {
-				drawnCoords = append(drawnCoords, drawingCoord{x, y})
-				(*d)[x][y] = "/"
-			}
-		case LowerRight:
-			for x, y := from.x, from.y+offsetFrom; x <= to.x+offsetTo && y <= to.y+offsetTo; x, y = x+1, y+1 {
-				drawnCoords = append(drawnCoords, drawingCoord{x, y})
-				(*d)[x][y] = "\\"
-			}
+	case Down:
+		for y := from.y + offsetFrom; y <= to.y+offsetTo; y++ {
+			drawnCoords = append(drawnCoords, drawingCoord{from.x, y})
+			(*d)[from.x][y] = chars.vertical
+		}
+	case Left:
+		for x := from.x - offsetFrom; x >= to.x-offsetTo; x-- {
+			drawnCoords = append(drawnCoords, drawingCoord{x, from.y})
+			(*d)[x][from.y] = chars.horizontal
+		}
+	case Right:
+		for x := from.x + offsetFrom; x <= to.x+offsetTo; x++ {
+			drawnCoords = append(drawnCoords, drawingCoord{x, from.y})
+			(*d)[x][from.y] = chars.horizontal
+		}
+	case UpperLeft:
+		for x, y := from.x, from.y-offsetFrom; x >= to.x-offsetTo && y >= to.y-offsetTo; x, y = x-1, y-1 {
+			drawnCoords = append(drawnCoords, drawingCoord{x, y})
+			(*d)[x][y] = chars.diagonalDownRight
+		}
+	case UpperRight:
+		for x, y := from.x, from.y-offsetFrom; x <= to.x+offsetTo && y >= to.y-offsetTo; x, y = x+1, y-1 {
+			drawnCoords = append(drawnCoords, drawingCoord{x, y})
+			(*d)[x][y] = chars.diagonalUpRight
+		}
+	case LowerLeft:
+		for x, y := from.x, from.y+offsetFrom; x >= to.x-offsetTo && y <= to.y+offsetTo; x, y = x-1, y+1 {
+			drawnCoords = append(drawnCoords, drawingCoord{x, y})
+			(*d)[x][y] = chars.diagonalUpRight
+		}
+	case LowerRight:
+		for x, y := from.x, from.y+offsetFrom; x <= to.x+offsetTo && y <= to.y+offsetTo; x, y = x+1, y+1 {
+			drawnCoords = append(drawnCoords, drawingCoord{x, y})
+			(*d)[x][y] = chars.diagonalDownRight
 		}
 	}
 	return drawnCoords
@@ -182,52 +119,20 @@ func drawBox(n *node, g graph) *drawing {
 	from := drawingCoord{0, 0}
 	to := drawingCoord{w, h}
 	boxDrawing := *(mkDrawing(Max(from.x, to.x), Max(from.y, to.y)))
+	chars := g.boxCharsForNode(n)
 	log.Debug("Drawing box from ", from, " to ", to)
-	if !g.useAscii {
-		// Draw top border
-		for x := from.x + 1; x < to.x; x++ {
-			boxDrawing[x][from.y] = "─" // Horizontal line
-		}
-		// Draw bottom border
-		for x := from.x + 1; x < to.x; x++ {
-			boxDrawing[x][to.y] = "─" // Horizontal line
-		}
-		// Draw left border
-		for y := from.y + 1; y < to.y; y++ {
-			boxDrawing[from.x][y] = "│" // Vertical line
-		}
-		// Draw right border
-		for y := from.y + 1; y < to.y; y++ {
-			boxDrawing[to.x][y] = "│" // Vertical line
-		}
-		// Draw corners
-		boxDrawing[from.x][from.y] = "┌" // Top left corner
-		boxDrawing[to.x][from.y] = "┐"   // Top right corner
-		boxDrawing[from.x][to.y] = "└"   // Bottom left corner
-		boxDrawing[to.x][to.y] = "┘"     // Bottom right corner
-	} else {
-		// Draw top border
-		for x := from.x + 1; x < to.x; x++ {
-			boxDrawing[x][from.y] = "-" // Horizontal line
-		}
-		// Draw bottom border
-		for x := from.x + 1; x < to.x; x++ {
-			boxDrawing[x][to.y] = "-" // Horizontal line
-		}
-		// Draw left border
-		for y := from.y + 1; y < to.y; y++ {
-			boxDrawing[from.x][y] = "|" // Vertical line
-		}
-		// Draw right border
-		for y := from.y + 1; y < to.y; y++ {
-			boxDrawing[to.x][y] = "|" // Vertical line
-		}
-		// Draw corners
-		boxDrawing[from.x][from.y] = "+" // Top left corner
-		boxDrawing[to.x][from.y] = "+"   // Top right corner
-		boxDrawing[from.x][to.y] = "+"   // Bottom left corner
-		boxDrawing[to.x][to.y] = "+"     // Bottom right corner
+	for x := from.x + 1; x < to.x; x++ {
+		boxDrawing[x][from.y] = chars.horizontal
+		boxDrawing[x][to.y] = chars.horizontal
 	}
+	for y := from.y + 1; y < to.y; y++ {
+		boxDrawing[from.x][y] = chars.vertical
+		boxDrawing[to.x][y] = chars.vertical
+	}
+	boxDrawing[from.x][from.y] = chars.topLeft
+	boxDrawing[to.x][from.y] = chars.topRight
+	boxDrawing[from.x][to.y] = chars.bottomLeft
+	boxDrawing[to.x][to.y] = chars.bottomRight
 	// Draw label lines inside the padded content area.
 	innerTop := from.y + 1
 	innerHeight := h - 1
@@ -261,54 +166,22 @@ func drawSubgraph(sg *subgraph, g graph) *drawing {
 	from := drawingCoord{0, 0}
 	to := drawingCoord{width, height}
 	subgraphDrawing := *(mkDrawing(width, height))
+	chars := g.boxCharsForSubgraph()
 
 	log.Debugf("Drawing subgraph %s from (%d,%d) to (%d,%d)", sg.name, from.x, from.y, to.x, to.y)
 
-	if !g.useAscii {
-		// Draw top border
-		for x := from.x + 1; x < to.x; x++ {
-			subgraphDrawing[x][from.y] = "─"
-		}
-		// Draw bottom border
-		for x := from.x + 1; x < to.x; x++ {
-			subgraphDrawing[x][to.y] = "─"
-		}
-		// Draw left border
-		for y := from.y + 1; y < to.y; y++ {
-			subgraphDrawing[from.x][y] = "│"
-		}
-		// Draw right border
-		for y := from.y + 1; y < to.y; y++ {
-			subgraphDrawing[to.x][y] = "│"
-		}
-		// Draw corners
-		subgraphDrawing[from.x][from.y] = "┌"
-		subgraphDrawing[to.x][from.y] = "┐"
-		subgraphDrawing[from.x][to.y] = "└"
-		subgraphDrawing[to.x][to.y] = "┘"
-	} else {
-		// Draw top border
-		for x := from.x + 1; x < to.x; x++ {
-			subgraphDrawing[x][from.y] = "-"
-		}
-		// Draw bottom border
-		for x := from.x + 1; x < to.x; x++ {
-			subgraphDrawing[x][to.y] = "-"
-		}
-		// Draw left border
-		for y := from.y + 1; y < to.y; y++ {
-			subgraphDrawing[from.x][y] = "|"
-		}
-		// Draw right border
-		for y := from.y + 1; y < to.y; y++ {
-			subgraphDrawing[to.x][y] = "|"
-		}
-		// Draw corners
-		subgraphDrawing[from.x][from.y] = "+"
-		subgraphDrawing[to.x][from.y] = "+"
-		subgraphDrawing[from.x][to.y] = "+"
-		subgraphDrawing[to.x][to.y] = "+"
+	for x := from.x + 1; x < to.x; x++ {
+		subgraphDrawing[x][from.y] = chars.horizontal
+		subgraphDrawing[x][to.y] = chars.horizontal
 	}
+	for y := from.y + 1; y < to.y; y++ {
+		subgraphDrawing[from.x][y] = chars.vertical
+		subgraphDrawing[to.x][y] = chars.vertical
+	}
+	subgraphDrawing[from.x][from.y] = chars.topLeft
+	subgraphDrawing[to.x][from.y] = chars.topRight
+	subgraphDrawing[from.x][to.y] = chars.bottomLeft
+	subgraphDrawing[to.x][to.y] = chars.bottomRight
 
 	// NOTE: Label is now drawn separately in drawSubgraphLabel to prevent arrows from overwriting it
 
@@ -395,31 +268,6 @@ func (g *graph) setDrawingSizeToGridConstraints() {
 	g.drawing.increaseSize(maxX-1, maxY-1)
 }
 
-func mergeJunctions(c1, c2 string) string {
-	// Define all possible junction combinations
-	junctionMap := map[string]map[string]string{
-		"─": {"│": "┼", "┌": "┬", "┐": "┬", "└": "┴", "┘": "┴", "├": "┼", "┤": "┼", "┬": "┬", "┴": "┴"},
-		"│": {"─": "┼", "┌": "├", "┐": "┤", "└": "├", "┘": "┤", "├": "├", "┤": "┤", "┬": "┼", "┴": "┼"},
-		"┌": {"─": "┬", "│": "├", "┐": "┬", "└": "├", "┘": "┼", "├": "├", "┤": "┼", "┬": "┬", "┴": "┼"},
-		"┐": {"─": "┬", "│": "┤", "┌": "┬", "└": "┼", "┘": "┤", "├": "┼", "┤": "┤", "┬": "┬", "┴": "┼"},
-		"└": {"─": "┴", "│": "├", "┌": "├", "┐": "┼", "┘": "┴", "├": "├", "┤": "┼", "┬": "┼", "┴": "┴"},
-		"┘": {"─": "┴", "│": "┤", "┌": "┼", "┐": "┤", "└": "┴", "├": "┼", "┤": "┤", "┬": "┼", "┴": "┴"},
-		"├": {"─": "┼", "│": "├", "┌": "├", "┐": "┼", "└": "├", "┘": "┼", "┤": "┼", "┬": "┼", "┴": "┼"},
-		"┤": {"─": "┼", "│": "┤", "┌": "┼", "┐": "┤", "└": "┼", "┘": "┤", "├": "┼", "┬": "┼", "┴": "┼"},
-		"┬": {"─": "┬", "│": "┼", "┌": "┬", "┐": "┬", "└": "┼", "┘": "┼", "├": "┼", "┤": "┼", "┴": "┼"},
-		"┴": {"─": "┴", "│": "┼", "┌": "┼", "┐": "┼", "└": "┴", "┘": "┴", "├": "┼", "┤": "┼", "┬": "┼"},
-	}
-
-	// Check if there's a defined merge for the two characters
-	if merged, ok := junctionMap[c1][c2]; ok {
-		log.Debugf("Merging %s and %s to %s", c1, c2, merged)
-		return merged
-	}
-
-	// If no merge is defined, return c1 as a fallback
-	return c1
-}
-
 func (g *graph) mergeDrawings(baseDrawing *drawing, mergeCoord drawingCoord, drawings ...*drawing) *drawing {
 	// Find the maximum dimensions
 	maxX, maxY := getDrawingSize(baseDrawing)
@@ -448,8 +296,9 @@ func (g *graph) mergeDrawings(baseDrawing *drawing, mergeCoord drawingCoord, dra
 				c := (*d)[x][y]
 				if c != " " {
 					currentChar := (*mergedDrawing)[x+mergeCoord.x][y+mergeCoord.y]
-					if !g.useAscii && isJunctionChar(c) && isJunctionChar(currentChar) {
-						(*mergedDrawing)[x+mergeCoord.x][y+mergeCoord.y] = mergeJunctions(currentChar, c)
+					charset := g.charset()
+					if !g.useAscii && charset.isJunctionChar(c) && charset.isJunctionChar(currentChar) {
+						(*mergedDrawing)[x+mergeCoord.x][y+mergeCoord.y] = charset.mergeJunctions(currentChar, c)
 					} else {
 						(*mergedDrawing)[x+mergeCoord.x][y+mergeCoord.y] = c
 					}
@@ -459,15 +308,6 @@ func (g *graph) mergeDrawings(baseDrawing *drawing, mergeCoord drawingCoord, dra
 	}
 
 	return mergedDrawing
-}
-
-func isJunctionChar(c string) bool {
-	for _, junctionChar := range junctionChars {
-		if c == junctionChar {
-			return true
-		}
-	}
-	return false
 }
 
 func drawingToString(d *drawing) string {

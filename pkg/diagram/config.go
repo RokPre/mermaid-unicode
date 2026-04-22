@@ -28,6 +28,14 @@ type Config struct {
 	// GraphDirection is the direction of graph layout ("LR" or "TD")
 	GraphDirection string
 
+	// GraphBoxStyle is the default graph node box style for nodes without explicit Mermaid shape syntax.
+	// Supported values: "square", "rounded", "double", "heavy".
+	GraphBoxStyle string
+
+	// GraphEdgeStyle is the default graph edge line style for standard Mermaid arrows.
+	// Supported values: "light", "heavy", "dashed".
+	GraphEdgeStyle string
+
 	// StyleType determines output format for graph diagrams ("cli" or "html")
 	// This controls whether graphs use colored output (html) or plain text (cli)
 	StyleType string
@@ -56,6 +64,8 @@ func DefaultConfig() *Config {
 		PaddingBetweenX:  5,
 		PaddingBetweenY:  5,
 		GraphDirection:   "LR",
+		GraphBoxStyle:    "square",
+		GraphEdgeStyle:   "light",
 		StyleType:        "cli",
 		// Sequence diagram defaults
 		SequenceParticipantSpacing: 5,
@@ -76,6 +86,8 @@ func NewConfig(useAscii bool, graphDirection, styleType string) (*Config, error)
 		PaddingBetweenX:            5,
 		PaddingBetweenY:            5,
 		GraphDirection:             graphDirection,
+		GraphBoxStyle:              "square",
+		GraphEdgeStyle:             "light",
 		StyleType:                  styleType,
 		SequenceParticipantSpacing: 5,
 		SequenceMessageSpacing:     1,
@@ -89,7 +101,7 @@ func NewConfig(useAscii bool, graphDirection, styleType string) (*Config, error)
 	return config, nil
 }
 
-func NewCLIConfig(useAscii, showCoords, verbose bool, boxBorderPadding, paddingX, paddingY int, graphDirection string) (*Config, error) {
+func NewCLIConfig(useAscii, showCoords, verbose bool, boxBorderPadding, paddingX, paddingY int, graphDirection, graphBoxStyle, graphEdgeStyle string) (*Config, error) {
 	defaults := DefaultConfig()
 	config := &Config{
 		UseAscii:                   useAscii,
@@ -99,6 +111,8 @@ func NewCLIConfig(useAscii, showCoords, verbose bool, boxBorderPadding, paddingX
 		PaddingBetweenX:            paddingX,
 		PaddingBetweenY:            paddingY,
 		GraphDirection:             graphDirection,
+		GraphBoxStyle:              graphBoxStyle,
+		GraphEdgeStyle:             graphEdgeStyle,
 		StyleType:                  "cli",
 		SequenceParticipantSpacing: defaults.SequenceParticipantSpacing,
 		SequenceMessageSpacing:     defaults.SequenceMessageSpacing,
@@ -122,6 +136,8 @@ func NewWebConfig(useAscii bool, boxBorderPadding, paddingX, paddingY int) (*Con
 		PaddingBetweenX:            paddingX,
 		PaddingBetweenY:            paddingY,
 		GraphDirection:             "LR",
+		GraphBoxStyle:              defaults.GraphBoxStyle,
+		GraphEdgeStyle:             defaults.GraphEdgeStyle,
 		StyleType:                  "html",
 		SequenceParticipantSpacing: defaults.SequenceParticipantSpacing,
 		SequenceMessageSpacing:     defaults.SequenceMessageSpacing,
@@ -159,6 +175,12 @@ func (c *Config) Validate() error {
 	}
 	if c.GraphDirection != "LR" && c.GraphDirection != "TD" {
 		return &ConfigError{Field: "GraphDirection", Value: c.GraphDirection, Message: "must be \"LR\" or \"TD\""}
+	}
+	if c.GraphBoxStyle != "" && c.GraphBoxStyle != "square" && c.GraphBoxStyle != "rounded" && c.GraphBoxStyle != "double" && c.GraphBoxStyle != "heavy" {
+		return &ConfigError{Field: "GraphBoxStyle", Value: c.GraphBoxStyle, Message: "must be one of \"square\", \"rounded\", \"double\", or \"heavy\""}
+	}
+	if c.GraphEdgeStyle != "" && c.GraphEdgeStyle != "light" && c.GraphEdgeStyle != "heavy" && c.GraphEdgeStyle != "dashed" {
+		return &ConfigError{Field: "GraphEdgeStyle", Value: c.GraphEdgeStyle, Message: "must be one of \"light\", \"heavy\", or \"dashed\""}
 	}
 	if c.StyleType != "cli" && c.StyleType != "html" {
 		return &ConfigError{Field: "StyleType", Value: c.StyleType, Message: "must be \"cli\" or \"html\""}

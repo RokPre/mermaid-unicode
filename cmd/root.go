@@ -18,6 +18,8 @@ var paddingBetweenX = 5
 var paddingBetweenY = 5
 var graphDirection = "LR"
 var useAscii = false
+var graphBoxStyle = "square"
+var graphEdgeStyle = "light"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -59,6 +61,8 @@ var rootCmd = &cobra.Command{
 			paddingBetweenX,
 			paddingBetweenY,
 			graphDirection,
+			graphBoxStyle,
+			graphEdgeStyle,
 		)
 		if err != nil {
 			log.Fatalf("Invalid configuration: %v", err)
@@ -93,6 +97,8 @@ func init() {
 	rootCmd.PersistentFlags().IntVarP(&paddingBetweenX, "paddingX", "x", paddingBetweenX, "Horizontal space between nodes")
 	rootCmd.PersistentFlags().IntVarP(&paddingBetweenY, "paddingY", "y", paddingBetweenY, "Vertical space between nodes")
 	rootCmd.PersistentFlags().IntVarP(&boxBorderPadding, "borderPadding", "p", boxBorderPadding, "Padding between text and border")
+	rootCmd.PersistentFlags().StringVar(&graphBoxStyle, "box-style", graphBoxStyle, "Default Unicode box style for nodes without explicit shape (square, rounded, double, heavy)")
+	rootCmd.PersistentFlags().StringVar(&graphEdgeStyle, "edge-style", graphEdgeStyle, "Default Unicode edge style for standard arrows (light, heavy, dashed)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

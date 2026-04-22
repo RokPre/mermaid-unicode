@@ -87,6 +87,14 @@ func (gd *GraphDiagram) Render(config *diagram.Config) (string, error) {
 	gd.properties.paddingY = config.PaddingBetweenY
 	gd.properties.styleType = styleType
 	gd.properties.useAscii = config.UseAscii
+	gd.properties.graphBoxStyle = config.GraphBoxStyle
+	if gd.properties.graphBoxStyle == "" {
+		gd.properties.graphBoxStyle = "square"
+	}
+	gd.properties.graphEdgeStyle = graphEdgeLineStyle(config.GraphEdgeStyle)
+	if gd.properties.graphEdgeStyle == "" {
+		gd.properties.graphEdgeStyle = graphEdgeLineStyleLight
+	}
 
 	return drawMap(gd.properties), nil
 }

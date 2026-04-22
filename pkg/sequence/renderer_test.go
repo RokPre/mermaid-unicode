@@ -157,6 +157,32 @@ func TestSequenceDiagramRendering_EastAsian(t *testing.T) {
 	}
 }
 
+func TestSequenceDiagramIgnoresGraphStyleDefaults(t *testing.T) {
+	input := "sequenceDiagram\nAlice->>Bob: Hello\nBob-->>Alice: Hi"
+	sd, err := Parse(input)
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+
+	baseConfig := diagram.NewTestConfig(false, "cli")
+	baseOutput, err := Render(sd, baseConfig)
+	if err != nil {
+		t.Fatalf("Render() base error = %v", err)
+	}
+
+	graphStyledConfig := diagram.NewTestConfig(false, "cli")
+	graphStyledConfig.GraphBoxStyle = "double"
+	graphStyledConfig.GraphEdgeStyle = "heavy"
+	graphStyledOutput, err := Render(sd, graphStyledConfig)
+	if err != nil {
+		t.Fatalf("Render() graph-styled error = %v", err)
+	}
+
+	if graphStyledOutput != baseOutput {
+		t.Fatalf("sequence output changed after setting graph-only styles\nbase:\n%s\ngraph styled:\n%s", baseOutput, graphStyledOutput)
+	}
+}
+
 // verifySequenceDiagramWithCharset verifies a test case with the specified charset.
 func verifySequenceDiagramWithCharset(t *testing.T, testCaseFile string, useAscii bool) {
 	tc, err := testutil.ReadSequenceTestCase(testCaseFile)

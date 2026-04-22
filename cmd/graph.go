@@ -41,6 +41,8 @@ type graph struct {
 	styleType        string
 	boxBorderPadding int
 	graphDirection   string
+	graphBoxStyle    string
+	graphEdgeStyle   graphEdgeLineStyle
 	paddingX         int
 	paddingY         int
 	subgraphs        []*subgraph
@@ -86,22 +88,37 @@ func mkGraph(data *orderedmap.OrderedMap[string, []textEdge], nodeSpecs map[stri
 		nodeName := el.Key
 		children := el.Value
 		spec := nodeSpecs[nodeName]
+		parentShape := spec.shape
+		if parentShape == "" {
+			parentShape = graphNodeShapeSquare
+		}
 		// Get or create parent node
 		parentNode, err := g.getNode(nodeName)
 		if err != nil {
-			parentNode = &node{name: nodeName, label: spec.label, index: index, styleClassName: spec.styleClass}
+			parentNode = &node{name: nodeName, label: spec.label, shape: parentShape, shapeIsExplicit: spec.shapeIsExplicit, index: index, styleClassName: spec.styleClass}
 			g.appendNode(parentNode)
 			index += 1
 		}
 		for _, textEdge := range children {
 			childSpec := nodeSpecs[textEdge.child.name]
+			childShape := childSpec.shape
+			if childShape == "" {
+				childShape = graphNodeShapeSquare
+			}
 			childNode, err := g.getNode(textEdge.child.name)
 			if err != nil {
-				childNode = &node{name: textEdge.child.name, label: childSpec.label, index: index, styleClassName: childSpec.styleClass}
+				childNode = &node{name: textEdge.child.name, label: childSpec.label, shape: childShape, shapeIsExplicit: childSpec.shapeIsExplicit, index: index, styleClassName: childSpec.styleClass}
 				g.appendNode(childNode)
 				index += 1
 			}
-			e := edge{from: parentNode, to: childNode, text: textEdge.label}
+			e := edge{
+				from:         parentNode,
+				to:           childNode,
+				text:         textEdge.label,
+				lineStyle:    textEdge.lineStyle,
+				lineStyleSet: textEdge.lineStyleSet,
+				hasArrowHead: textEdge.hasArrowHead,
+			}
 			g.edges = append(g.edges, &e)
 		}
 	}
@@ -114,6 +131,8 @@ func (g *graph) setStyleClasses(properties *graphProperties) {
 	g.styleType = properties.styleType
 	g.boxBorderPadding = properties.boxBorderPadding
 	g.graphDirection = properties.graphDirection
+	g.graphBoxStyle = properties.graphBoxStyle
+	g.graphEdgeStyle = properties.graphEdgeStyle
 	g.paddingX = properties.paddingX
 	g.paddingY = properties.paddingY
 	for _, n := range g.nodes {

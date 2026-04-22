@@ -1,6 +1,6 @@
-# Mermaid ASCII
+# Mermaid ASCII / Unicode
 
-Render mermaid diagrams in your terminal:
+Render Mermaid diagrams in your terminal. Unicode box drawing is the default, including rounded boxes, double-line boxes, decision-node approximations, heavy connectors, and dashed connectors. Use `--ascii` or `-a` when you need plain ASCII output.
 
 ## Installation
 
@@ -198,6 +198,52 @@ $ cat test.mermaid | mermaid-ascii --ascii
           |   |
           +---+
 
+# Unicode node shapes
+$ cat shapes.mermaid
+graph LR
+A(Rounded)
+B[[Double]]
+C{Decision}
+$ mermaid-ascii -f shapes.mermaid
+╭─────────╮
+│         │
+│ Rounded │
+│         │
+╰─────────╯
+           
+           
+           
+           
+           
+╔════════╗
+║        ║
+║ Double ║
+║        ║
+╚════════╝
+           
+           
+           
+           
+           
+◇────────────◇
+│            │
+│  Decision  │
+│            │
+◇────────────◇
+
+# Unicode edge styles
+$ cat edges.mermaid
+graph LR
+A ==> B
+B -.-> C
+C -.- D
+$ mermaid-ascii -f edges.mermaid
+┌───┐     ┌───┐     ┌───┐     ┌───┐
+│   │     │   │     │   │     │   │
+│ A ├━━━━►│ B ├┄┄┄┄►│ C ├┄┄┄┄┄│ D │
+│   │     │   │     │   │     │   │
+└───┘     └───┘     └───┘     └───┘
+
 # Using Docker
 $ docker build -t mermaid-ascii .
 $ echo 'sequenceDiagram
@@ -227,6 +273,43 @@ A-->B-->C' | docker run -i mermaid-ascii -f -
 $ docker run -p 3001:3001 mermaid-ascii web --port 3001
 # Then visit http://localhost:3001
 ```
+
+### Unicode Graph Styling
+
+Unicode output is the default. Use `--ascii` when you need plain ASCII-only diagrams.
+
+Supported graph node shape mappings:
+
+| Mermaid syntax | Terminal approximation |
+| --- | --- |
+| `A[Text]` or `A["Text"]` | square box, `┌ ┐ └ ┘` |
+| `A(Text)` | rounded box, `╭ ╮ ╰ ╯` |
+| `A([Text])` | stadium-like rounded box with extra horizontal padding |
+| `A[[Text]]` | double-line box, `╔ ╗ ╚ ╝` |
+| `A[(Text)]` | database/cylinder approximation using a rounded box |
+| `A((Text))` | circle-like rounded/stadium approximation |
+| `A{Text}` | decision approximation with `◇` endpoints |
+| `A{{Text}}` | hexagon-like approximation |
+| `A[/Text/]` | parallelogram-like approximation |
+
+Supported graph edge mappings:
+
+| Mermaid syntax | Terminal connector |
+| --- | --- |
+| `A --> B` | light line, `────►` |
+| `A ==> B` | heavy line, `━━━━►` |
+| `A -.-> B` | dashed line with arrowhead, `┄┄┄┄►` |
+| `A -.- B` | dashed line without arrowhead |
+
+You can also choose default styles for bare nodes and standard arrows:
+
+```bash
+$ mermaid-ascii -f graph.mermaid --box-style rounded --edge-style heavy
+```
+
+`--box-style` accepts `square`, `rounded`, `double`, or `heavy`.
+`--edge-style` accepts `light`, `heavy`, or `dashed`.
+Explicit Mermaid syntax still wins over these defaults, so `A[[Text]]` stays double-line and `A ==> B` stays heavy even when different defaults are configured.
 
 ### Sequence Diagrams
 
@@ -355,9 +438,12 @@ Available Commands:
   web         HTTP server for rendering mermaid diagrams.
 
 Flags:
+  -a, --ascii               Don't use extended character set
   -p, --borderPadding int   Padding between text and border (default 1)
+      --box-style string    Default Unicode box style for nodes without explicit shape (square, rounded, double, heavy) (default "square")
   -c, --coords              Show coordinates
-  -f, --file string         Mermaid file to parse
+      --edge-style string   Default Unicode edge style for standard arrows (light, heavy, dashed) (default "light")
+  -f, --file string         Mermaid file to parse (use '-' for stdin)
   -h, --help                help for mermaid-ascii
   -x, --paddingX int        Horizontal space between nodes (default 5)
   -y, --paddingY int        Vertical space between nodes (default 5)

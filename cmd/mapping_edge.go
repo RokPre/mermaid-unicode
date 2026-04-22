@@ -7,13 +7,16 @@ import (
 )
 
 type edge struct {
-	from      *node
-	to        *node
-	text      string
-	path      []gridCoord
-	labelLine []gridCoord
-	startDir  direction
-	endDir    direction
+	from         *node
+	to           *node
+	text         string
+	lineStyle    graphEdgeLineStyle
+	lineStyleSet bool
+	hasArrowHead bool
+	path         []gridCoord
+	labelLine    []gridCoord
+	startDir     direction
+	endDir       direction
 }
 
 func (g *graph) determinePath(e *edge) {
