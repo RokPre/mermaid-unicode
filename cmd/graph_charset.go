@@ -134,6 +134,12 @@ const (
 	connLeft
 )
 
+const (
+	graphLinePriorityDashed = iota
+	graphLinePriorityLight
+	graphLinePriorityHeavy
+)
+
 var graphCharConnections = map[string]lineConnection{
 	"─": connLeft | connRight,
 	"━": connLeft | connRight,
@@ -169,6 +175,43 @@ var graphCharConnections = map[string]lineConnection{
 	"┻": connUp | connRight | connLeft,
 	"┼": connUp | connRight | connDown | connLeft,
 	"╋": connUp | connRight | connDown | connLeft,
+}
+
+var graphCharPriorities = map[string]int{
+	"┄": graphLinePriorityDashed,
+	"┆": graphLinePriorityDashed,
+	"─": graphLinePriorityLight,
+	"│": graphLinePriorityLight,
+	"┌": graphLinePriorityLight,
+	"┐": graphLinePriorityLight,
+	"└": graphLinePriorityLight,
+	"┘": graphLinePriorityLight,
+	"╭": graphLinePriorityLight,
+	"╮": graphLinePriorityLight,
+	"╰": graphLinePriorityLight,
+	"╯": graphLinePriorityLight,
+	"├": graphLinePriorityLight,
+	"┤": graphLinePriorityLight,
+	"┬": graphLinePriorityLight,
+	"┴": graphLinePriorityLight,
+	"┼": graphLinePriorityLight,
+	"━": graphLinePriorityHeavy,
+	"┃": graphLinePriorityHeavy,
+	"┏": graphLinePriorityHeavy,
+	"┓": graphLinePriorityHeavy,
+	"┗": graphLinePriorityHeavy,
+	"┛": graphLinePriorityHeavy,
+	"┣": graphLinePriorityHeavy,
+	"┫": graphLinePriorityHeavy,
+	"┳": graphLinePriorityHeavy,
+	"┻": graphLinePriorityHeavy,
+	"╋": graphLinePriorityHeavy,
+	"═": graphLinePriorityHeavy,
+	"║": graphLinePriorityHeavy,
+	"╔": graphLinePriorityHeavy,
+	"╗": graphLinePriorityHeavy,
+	"╚": graphLinePriorityHeavy,
+	"╝": graphLinePriorityHeavy,
 }
 
 var unicodeLightGraphCharset = graphCharset{
@@ -369,17 +412,39 @@ func (g graph) boxCharsForSubgraph() graphBoxChars {
 
 func (g graph) lineCharsForEdge(e *edge) graphLineChars {
 	charset := g.charset()
-	lineStyle := e.lineStyle
-	if !e.lineStyleSet && g.graphEdgeStyle != "" {
-		lineStyle = g.graphEdgeStyle
-	}
-	switch lineStyle {
+	switch g.edgeLineStyle(e) {
 	case graphEdgeLineStyleHeavy:
 		return charset.heavyLine
 	case graphEdgeLineStyleDashed:
 		return charset.dashedLine
 	default:
 		return charset.line
+	}
+}
+
+func (g graph) edgeLineStyle(e *edge) graphEdgeLineStyle {
+	lineStyle := e.lineStyle
+	if !e.lineStyleSet && g.graphEdgeStyle != "" {
+		lineStyle = g.graphEdgeStyle
+	}
+	if lineStyle == "" {
+		return graphEdgeLineStyleLight
+	}
+	return lineStyle
+}
+
+func (g graph) edgeDrawPriority(e *edge) int {
+	return edgeLineStylePriority(g.edgeLineStyle(e))
+}
+
+func edgeLineStylePriority(style graphEdgeLineStyle) int {
+	switch style {
+	case graphEdgeLineStyleHeavy:
+		return graphLinePriorityHeavy
+	case graphEdgeLineStyleDashed:
+		return graphLinePriorityDashed
+	default:
+		return graphLinePriorityLight
 	}
 }
 
@@ -451,11 +516,59 @@ func (c graphCharset) mergeJunctions(c1, c2 string) string {
 	conn1, ok1 := graphCharConnections[c1]
 	conn2, ok2 := graphCharConnections[c2]
 	if ok1 && ok2 {
-		merged := lightJunctionForConnections(conn1 | conn2)
+		merged := junctionForConnections(conn1|conn2, maxLinePriority(graphCharPriority(c1), graphCharPriority(c2)))
 		log.Debugf("Merging %s and %s to %s", c1, c2, merged)
 		return merged
 	}
 	return c1
+}
+
+func graphCharPriority(char string) int {
+	if priority, ok := graphCharPriorities[char]; ok {
+		return priority
+	}
+	return graphLinePriorityLight
+}
+
+func maxLinePriority(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func junctionForConnections(conn lineConnection, priority int) string {
+	if priority >= graphLinePriorityHeavy {
+		return heavyJunctionForConnections(conn)
+	}
+	return lightJunctionForConnections(conn)
+}
+
+func heavyJunctionForConnections(conn lineConnection) string {
+	switch conn {
+	case connLeft | connRight:
+		return "━"
+	case connUp | connDown:
+		return "┃"
+	case connRight | connDown:
+		return "┏"
+	case connDown | connLeft:
+		return "┓"
+	case connUp | connRight:
+		return "┗"
+	case connUp | connLeft:
+		return "┛"
+	case connUp | connRight | connDown:
+		return "┣"
+	case connUp | connDown | connLeft:
+		return "┫"
+	case connRight | connDown | connLeft:
+		return "┳"
+	case connUp | connRight | connLeft:
+		return "┻"
+	default:
+		return "╋"
+	}
 }
 
 func lightJunctionForConnections(conn lineConnection) string {

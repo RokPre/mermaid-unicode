@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"sort"
 
 	"github.com/elliotchance/orderedmap/v2"
 	log "github.com/sirupsen/logrus"
@@ -590,7 +591,11 @@ func (g *graph) draw() *drawing {
 	arrowHeadDrawings := []*drawing{}
 	boxStartDrawings := []*drawing{}
 	labelDrawings := []*drawing{}
-	for _, edge := range g.edges {
+	edges := append([]*edge(nil), g.edges...)
+	sort.SliceStable(edges, func(i, j int) bool {
+		return g.edgeDrawPriority(edges[i]) < g.edgeDrawPriority(edges[j])
+	})
+	for _, edge := range edges {
 		line, boxStart, arrowHead, corners, label := g.drawEdge(edge)
 		lineDrawings = append(lineDrawings, line)
 		cornerDrawings = append(cornerDrawings, corners)
