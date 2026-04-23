@@ -732,6 +732,12 @@ Note that with `--coords` enabled, the grid-coords shown show the starting locat
 - [x] Deterministic terminal task bars
 - [x] ASCII and Unicode rendering modes
 
+### Git Graphs ✅
+- [x] `gitGraph` detection and rendering
+- [x] `commit`, `branch`, `checkout`, and `merge` commands
+- [x] Branch-lane event output
+- [x] ASCII and Unicode rendering modes
+
 ## TODOs
 
 The baseline components for Mermaid work, but there are a lot of things that are not supported yet. Here's a list of things that are not yet supported:

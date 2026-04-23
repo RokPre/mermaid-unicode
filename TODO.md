@@ -6,7 +6,6 @@ No current task selected.
 
 ## Active TODOs
 
-- [ ] 5 Gitgraph add-gitgraph-lane-renderer
 - [ ] 7 ZenUML defer-zenuml-subset
 - [ ] 8 Docs document-supported-mermaid-subsets
 
@@ -30,6 +29,7 @@ No current task selected.
 - [x] 4 UserJourney add-user-journey-renderer
 - [x] 4 Charts add-pie-and-quadrant-renderers
 - [x] 5 Gantt add-gantt-timeline-renderer
+- [x] 5 Gitgraph add-gitgraph-lane-renderer
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 1 Flowchart add-open-solid-connectors
@@ -675,7 +675,7 @@ Completed as a conservative terminal task-bar renderer for title, date format, s
 
 Priority: 5
 Area: Gitgraph
-Status: pending
+Status: done
 Depends on: add-diagram-registry, extract-style-and-color-model
 
 Goal:
@@ -698,7 +698,7 @@ Acceptance criteria:
 - `go test ./...` passes.
 
 Notes:
-Rotated labels and exact temporal placement are not terminal goals.
+Completed as a readable branch-lane event renderer for commits, branches, checkouts, and merges. Rotated labels and exact temporal placement are not terminal goals.
 
 ### defer-zenuml-subset
 

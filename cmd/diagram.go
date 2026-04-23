@@ -9,6 +9,7 @@ import (
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/diagram"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/er"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/gantt"
+	"github.com/AlexanderGrooff/mermaid-ascii/pkg/gitgraph"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/journey"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/mindmap"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/requirementdiagram"
@@ -120,6 +121,15 @@ var supportedDiagramRegistry = []diagramRegistration{
 		},
 	},
 	{
+		typeName: "gitgraph",
+		detect: func(input, _ string) bool {
+			return gitgraph.IsGitGraph(input)
+		},
+		create: func() diagram.Diagram {
+			return &GitGraphDiagram{}
+		},
+	},
+	{
 		typeName: "quadrant",
 		detect: func(input, _ string) bool {
 			return charts.IsQuadrant(input)
@@ -140,7 +150,6 @@ var supportedDiagramRegistry = []diagramRegistration{
 }
 
 var unsupportedDiagramRegistry = []unsupportedDiagramRegistration{
-	{typeName: "gitGraph", detect: keywordDetector("gitGraph")},
 	{typeName: "zenuml", detect: keywordDetector("zenuml")},
 }
 
@@ -484,6 +493,30 @@ func (gd *GanttDiagram) Render(config *diagram.Config) (string, error) {
 
 func (gd *GanttDiagram) Type() string {
 	return "gantt"
+}
+
+type GitGraphDiagram struct {
+	parsed *gitgraph.Diagram
+}
+
+func (gd *GitGraphDiagram) Parse(input string) error {
+	parsed, err := gitgraph.Parse(input)
+	if err != nil {
+		return err
+	}
+	gd.parsed = parsed
+	return nil
+}
+
+func (gd *GitGraphDiagram) Render(config *diagram.Config) (string, error) {
+	if gd.parsed == nil {
+		return "", fmt.Errorf("gitgraph not parsed: call Parse() before Render()")
+	}
+	return gitgraph.Render(gd.parsed, config)
+}
+
+func (gd *GitGraphDiagram) Type() string {
+	return "gitgraph"
 }
 
 type GraphDiagram struct {

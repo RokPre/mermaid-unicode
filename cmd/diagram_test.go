@@ -108,6 +108,12 @@ A: [0.2, 0.8]`,
 Task :2024-01-01, 1d`,
 			want: "gantt",
 		},
+		{
+			name: "gitgraph",
+			input: `gitGraph
+commit id: A`,
+			want: "gitgraph",
+		},
 	}
 
 	for _, tt := range tests {
@@ -130,7 +136,6 @@ func TestDiagramFactoryRejectsKnownUnsupportedTypes(t *testing.T) {
 		wantType    string
 		wantMessage string
 	}{
-		{name: "gitgraph", input: "gitGraph LR:\ncommit", wantType: "gitGraph"},
 		{name: "zenuml", input: "zenuml\nA.method()", wantType: "zenuml"},
 	}
 
