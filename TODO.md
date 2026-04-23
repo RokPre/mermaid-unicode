@@ -25,6 +25,7 @@ No current task selected.
 ## Done TODOs
 
 - [x] 0 Architecture add-diagram-registry
+- [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 0 Graph existing-flowchart-renderer
 - [x] 0 Sequence existing-sequence-renderer
 - [x] 1 Graph add-unicode-graph-rendering
@@ -90,6 +91,35 @@ Acceptance criteria:
 
 Notes:
 Do not attempt full Mermaid v11 expanded shape parity in one pass. Map aliases to existing approximations first.
+
+### add-expanded-shape-syntax
+
+Priority: 1
+Area: Flowchart
+Status: done
+Depends on: add-diagram-registry
+
+Goal:
+Support Mermaid's expanded flowchart node metadata syntax for shape aliases that map cleanly to existing terminal node shapes.
+
+Context:
+Mermaid v11.3.0+ supports `A@{ shape: rect }` style shape metadata. The renderer already had terminal approximations for square, rounded, stadium, double/subroutine, database, circle, decision, hexagon, and parallelogram shapes through older delimiter syntax.
+
+Expected changes:
+- Parse `@{ ... }` node metadata without treating it as part of the node id.
+- Map supported `shape:` aliases onto existing terminal shapes.
+- Preserve optional `label:` metadata and class shorthand such as `:::important`.
+- Leave unsupported expanded shapes as normal square nodes with the clean node id.
+- Add parser and render tests.
+
+Acceptance criteria:
+- `A@{ shape: rounded, label: "Research" }` renders with the rounded box glyphs and label `Research`.
+- Supported aliases for existing shape families parse into the expected `graphNodeShape`.
+- Unsupported expanded shapes do not corrupt the node id.
+- `go test ./...` passes.
+
+Notes:
+This completes one slice of `audit-flowchart-parity`; `BT`/`RL`, extra link heads, and a support matrix remain active follow-ups.
 
 ### expand-sequence-core
 

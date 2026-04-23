@@ -162,6 +162,26 @@ func TestRenderGraphUsesUnicodeNodeShapeGlyphs(t *testing.T) {
 	assertUniformDisplayWidth(t, output)
 }
 
+func TestRenderGraphUsesExpandedShapeSyntax(t *testing.T) {
+	config := diagram.NewTestConfig(false, "cli")
+	output, err := RenderDiagram(`graph LR
+A@{ shape: rounded, label: "Research" }
+B@{ shape: subroutine, label: "Double" }
+C@{ shape: decision, label: "Decide" }
+D@{ shape: lean-r, label: "Input" }`, config)
+	if err != nil {
+		t.Fatalf("RenderDiagram() error = %v", err)
+	}
+
+	for _, want := range []string{"Research", "Double", "Decide", "Input", "╭", "╮", "╔", "╗", "◇", "╱", "╲"} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("expected output to contain %q\noutput:\n%s", want, output)
+		}
+	}
+
+	assertUniformDisplayWidth(t, output)
+}
+
 func TestRenderGraphShapeGlyphsRespectAsciiFallback(t *testing.T) {
 	config := diagram.NewTestConfig(true, "cli")
 	output, err := RenderDiagram("graph LR\nA(Rounded)\nB[[Double]]\nC{Decision}", config)

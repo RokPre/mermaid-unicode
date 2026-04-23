@@ -97,6 +97,80 @@ func TestParseNodeShapes(t *testing.T) {
 	}
 }
 
+func TestParseNodeExpandedShapeSyntax(t *testing.T) {
+	tests := []struct {
+		input        string
+		wantName     string
+		wantLabel    string
+		wantHasLabel bool
+		wantShape    graphNodeShape
+	}{
+		{input: `A@{ shape: rect }`, wantName: "A", wantLabel: "A", wantShape: graphNodeShapeSquare},
+		{input: `B@{ shape: rounded }`, wantName: "B", wantLabel: "B", wantShape: graphNodeShapeRounded},
+		{input: `C@{ shape: stadium }`, wantName: "C", wantLabel: "C", wantShape: graphNodeShapeStadium},
+		{input: `D@{ shape: subroutine }`, wantName: "D", wantLabel: "D", wantShape: graphNodeShapeDouble},
+		{input: `E@{ shape: db }`, wantName: "E", wantLabel: "E", wantShape: graphNodeShapeDatabase},
+		{input: `F@{ shape: circle }`, wantName: "F", wantLabel: "F", wantShape: graphNodeShapeCircle},
+		{input: `G@{ shape: decision }`, wantName: "G", wantLabel: "G", wantShape: graphNodeShapeDecision},
+		{input: `H@{ shape: hexagon }`, wantName: "H", wantLabel: "H", wantShape: graphNodeShapeHexagon},
+		{input: `I@{ shape: lean-r }`, wantName: "I", wantLabel: "I", wantShape: graphNodeShapeParallelogram},
+		{input: `J@{ shape: rounded, label: "Research" }`, wantName: "J", wantLabel: "Research", wantHasLabel: true, wantShape: graphNodeShapeRounded},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			node := parseNode(tt.input)
+
+			if node.name != tt.wantName {
+				t.Fatalf("name = %q, want %q", node.name, tt.wantName)
+			}
+			if len(node.label.lines) != 1 || node.label.lines[0] != tt.wantLabel {
+				t.Fatalf("label lines = %#v, want [%s]", node.label.lines, tt.wantLabel)
+			}
+			if node.hasLabel != tt.wantHasLabel {
+				t.Fatalf("hasLabel = %v, want %v", node.hasLabel, tt.wantHasLabel)
+			}
+			if node.shape != tt.wantShape {
+				t.Fatalf("shape = %q, want %q", node.shape, tt.wantShape)
+			}
+			if !node.hasShape {
+				t.Fatal("expected expanded shape syntax to set explicit shape")
+			}
+		})
+	}
+}
+
+func TestParseNodeExpandedShapeKeepsStyleClass(t *testing.T) {
+	node := parseNode(`A@{ shape: rounded, label: "Research" }:::important`)
+
+	if node.name != "A" {
+		t.Fatalf("name = %q, want A", node.name)
+	}
+	if node.styleClass != "important" {
+		t.Fatalf("styleClass = %q, want important", node.styleClass)
+	}
+	if node.shape != graphNodeShapeRounded {
+		t.Fatalf("shape = %q, want %q", node.shape, graphNodeShapeRounded)
+	}
+	if len(node.label.lines) != 1 || node.label.lines[0] != "Research" {
+		t.Fatalf("label lines = %#v, want [Research]", node.label.lines)
+	}
+}
+
+func TestParseNodeExpandedShapeIgnoresUnsupportedShape(t *testing.T) {
+	node := parseNode(`A@{ shape: cloud }`)
+
+	if node.name != "A" {
+		t.Fatalf("name = %q, want A", node.name)
+	}
+	if node.hasShape {
+		t.Fatal("expected unsupported expanded shape to leave shape unset")
+	}
+	if len(node.label.lines) != 1 || node.label.lines[0] != "A" {
+		t.Fatalf("label lines = %#v, want [A]", node.label.lines)
+	}
+}
+
 func TestMermaidFileToMapPreservesEscapedLabelNewlines(t *testing.T) {
 	properties, err := mermaidFileToMap("graph LR\\nA[\"line1\\nline2\"] --> B", "cli")
 	if err != nil {
@@ -231,6 +305,27 @@ func TestMermaidFileToMapKeepsExplicitNodeShapeAcrossBareReferences(t *testing.T
 	}
 	if !spec.shapeIsExplicit {
 		t.Fatal("expected A shape to remain explicit")
+	}
+}
+
+func TestMermaidFileToMapKeepsExpandedNodeShapeAcrossBareReferences(t *testing.T) {
+	properties, err := mermaidFileToMap("graph TD\nA@{ shape: rounded, label: \"Research\" } --> B\nA --> C", "cli")
+	if err != nil {
+		t.Fatalf("mermaidFileToMap() error = %v", err)
+	}
+
+	spec := properties.nodeSpecs["A"]
+	if spec.shape != graphNodeShapeRounded {
+		t.Fatalf("shape = %q, want %q", spec.shape, graphNodeShapeRounded)
+	}
+	if !spec.shapeIsExplicit {
+		t.Fatal("expected A shape to remain explicit")
+	}
+	if len(spec.label.lines) != 1 || spec.label.lines[0] != "Research" {
+		t.Fatalf("label lines = %#v, want [Research]", spec.label.lines)
+	}
+	if !spec.labelIsExplicit {
+		t.Fatal("expected A label to remain explicit")
 	}
 }
 

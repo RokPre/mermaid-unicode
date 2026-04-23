@@ -67,6 +67,8 @@ const (
 	graphEdgeLineStyleDashed graphEdgeLineStyle = "dashed"
 )
 
+var graphExpandedNodePropertyRegex = regexp.MustCompile(`(?i)([a-z][a-z0-9_-]*)\s*:\s*(?:"([^"]*)"|'([^']*)'|([^,}]+))`)
+
 type textEdge struct {
 	parent       textNode
 	child        textNode
@@ -155,6 +157,9 @@ func parseNode(line string) textNode {
 
 	name := trimmedLine
 	labelText := trimmedLine
+	if node, ok := parseExpandedShapeNode(trimmedLine, styleClass); ok {
+		return node
+	}
 	for _, shape := range nodeShapeSyntaxes() {
 		if open := strings.Index(trimmedLine, shape.open); open > 0 && strings.HasSuffix(trimmedLine, shape.close) {
 			name = strings.TrimSpace(trimmedLine[:open])
@@ -172,6 +177,87 @@ func parseNode(line string) textNode {
 	}
 
 	return textNode{name: name, label: newGraphLabel(labelText), styleClass: styleClass}
+}
+
+func parseExpandedShapeNode(line, styleClass string) (textNode, bool) {
+	open := strings.Index(line, "@{")
+	if open <= 0 || !strings.HasSuffix(line, "}") {
+		return textNode{}, false
+	}
+
+	name := strings.TrimSpace(line[:open])
+	if name == "" {
+		return textNode{}, false
+	}
+
+	metadata := strings.TrimSpace(line[open+len("@{") : len(line)-len("}")])
+	properties := parseExpandedNodeProperties(metadata)
+	labelText, hasLabel := properties["label"]
+	if !hasLabel {
+		labelText = name
+	}
+
+	node := textNode{
+		name:       name,
+		label:      newGraphLabel(labelText),
+		hasLabel:   hasLabel,
+		styleClass: styleClass,
+	}
+
+	if shapeName, ok := properties["shape"]; ok {
+		if shape, ok := expandedNodeShape(shapeName); ok {
+			node.shape = shape
+			node.hasShape = true
+		}
+	}
+
+	return node, true
+}
+
+func parseExpandedNodeProperties(metadata string) map[string]string {
+	properties := map[string]string{}
+	for _, match := range graphExpandedNodePropertyRegex.FindAllStringSubmatch(metadata, -1) {
+		key := strings.ToLower(strings.TrimSpace(match[1]))
+		value := ""
+		for _, candidate := range match[2:] {
+			if candidate != "" {
+				value = strings.TrimSpace(candidate)
+				break
+			}
+		}
+		if key != "" && value != "" {
+			properties[key] = value
+		}
+	}
+	return properties
+}
+
+func expandedNodeShape(shapeName string) (graphNodeShape, bool) {
+	normalized := strings.ToLower(strings.TrimSpace(shapeName))
+	normalized = strings.Trim(normalized, `"'`)
+
+	switch normalized {
+	case "rect", "rectangle", "proc", "process":
+		return graphNodeShapeSquare, true
+	case "rounded", "event", "delay", "half-rounded-rectangle":
+		return graphNodeShapeRounded, true
+	case "stadium", "terminal", "pill":
+		return graphNodeShapeStadium, true
+	case "subroutine", "subprocess", "subproc", "fr-rect", "framed-rectangle", "framed-rect":
+		return graphNodeShapeDouble, true
+	case "database", "db", "cyl", "cylinder":
+		return graphNodeShapeDatabase, true
+	case "circle", "circ", "small-circle", "sm-circ", "start", "double-circle", "dbl-circ", "framed-circle", "fr-circ", "stop":
+		return graphNodeShapeCircle, true
+	case "decision", "diamond", "diam", "question":
+		return graphNodeShapeDecision, true
+	case "hexagon", "hex", "prepare":
+		return graphNodeShapeHexagon, true
+	case "lean-r", "lean-right", "in-out", "lean-l", "lean-left", "out-in", "parallelogram", "parallelogram-alt":
+		return graphNodeShapeParallelogram, true
+	default:
+		return "", false
+	}
 }
 
 type nodeShapeSyntax struct {
