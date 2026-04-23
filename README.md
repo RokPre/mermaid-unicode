@@ -659,6 +659,7 @@ Note that with `--coords` enabled, the grid-coords shown show the starting locat
 - [x] Actor declarations and aliases (`actor A as Alice`)
 - [x] Notes (`Note left of Alice`, `Note right of Alice`, `Note over Alice,Bob`)
 - [x] Activation directives (`activate Alice`, `deactivate Alice`)
+- [x] Activation shorthand (`A->>+B`, `B-->>-A`)
 - [x] Unicode support (emojis, CJK characters, etc.)
 - [x] Both ASCII and Unicode rendering modes
 - [ ] Activation boxes

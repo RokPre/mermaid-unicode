@@ -28,6 +28,7 @@ No current task selected.
 - [x] 1 Sequence add-sequence-actor-declarations
 - [x] 1 Sequence add-sequence-notes
 - [x] 1 Sequence add-sequence-activation-directives
+- [x] 1 Sequence add-sequence-activation-shorthand
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 1 Flowchart add-open-solid-connectors
@@ -209,6 +210,33 @@ Acceptance criteria:
 
 Notes:
 This does not yet support Mermaid's `+` and `-` message suffix shorthand.
+
+### add-sequence-activation-shorthand
+
+Priority: 1
+Area: Sequence
+Status: done
+Depends on: add-sequence-activation-directives
+
+Goal:
+Support Mermaid sequence activation shorthand on message arrows.
+
+Context:
+Mermaid allows activation changes directly on message arrows, such as `A->>+B: Start` and `B-->>-A: Done`. Standalone `activate`/`deactivate` directives were already supported, so this slice extends message parsing to create the same activation events around messages.
+
+Expected changes:
+- Parse `->>+` and `-->>+` as post-message activation of the receiver.
+- Parse `->>-` and `-->>-` as post-message deactivation of the sender.
+- Preserve source-order message rendering.
+- Keep existing message, note, and standalone activation tests passing.
+
+Acceptance criteria:
+- Activation shorthand creates activation records tied to messages.
+- Rendered output visibly shows activation bars after `+` and removes them after `-`.
+- `go test ./...` passes.
+
+Notes:
+This implements the common activation shorthand subset for currently supported solid and dotted message arrows.
 
 ### add-expanded-shape-syntax
 

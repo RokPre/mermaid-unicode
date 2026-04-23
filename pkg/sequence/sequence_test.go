@@ -155,16 +155,19 @@ func TestMessageRegex(t *testing.T) {
 		input     string
 		wantFrom  string
 		wantArrow string
+		wantAct   string
 		wantTo    string
 		wantLabel string
 		wantMatch bool
 	}{
-		{"A->>B: Hello", "A", "->>", "B", "Hello", true},
-		{"A-->>B: Response", "A", "-->>", "B", "Response", true},
-		{`"My Service"->>B: Test`, "My Service", "->>", "B", "Test", true},
-		{"A->>B: ", "A", "->>", "B", "", true},
-		{"A->B: Test", "", "", "", "", false},
-		{"A->>B", "", "", "", "", false},
+		{"A->>B: Hello", "A", "->>", "", "B", "Hello", true},
+		{"A-->>B: Response", "A", "-->>", "", "B", "Response", true},
+		{"A->>+B: Start", "A", "->>", "+", "B", "Start", true},
+		{"B-->>-A: Done", "B", "-->>", "-", "A", "Done", true},
+		{`"My Service"->>B: Test`, "My Service", "->>", "", "B", "Test", true},
+		{"A->>B: ", "A", "->>", "", "B", "", true},
+		{"A->B: Test", "", "", "", "", "", false},
+		{"A->>B", "", "", "", "", "", false},
 	}
 
 	for _, tt := range tests {
@@ -183,15 +186,16 @@ func TestMessageRegex(t *testing.T) {
 			gotFrom = match[1]
 		}
 		gotArrow := match[3]
-		gotTo := match[5]
-		if match[4] != "" {
-			gotTo = match[4]
+		gotAct := match[4]
+		gotTo := match[6]
+		if match[5] != "" {
+			gotTo = match[5]
 		}
-		gotLabel := match[6]
+		gotLabel := match[7]
 
-		if gotFrom != tt.wantFrom || gotArrow != tt.wantArrow || gotTo != tt.wantTo || gotLabel != tt.wantLabel {
-			t.Errorf("messageRegex(%q) = (%q, %q, %q, %q), want (%q, %q, %q, %q)",
-				tt.input, gotFrom, gotArrow, gotTo, gotLabel, tt.wantFrom, tt.wantArrow, tt.wantTo, tt.wantLabel)
+		if gotFrom != tt.wantFrom || gotArrow != tt.wantArrow || gotAct != tt.wantAct || gotTo != tt.wantTo || gotLabel != tt.wantLabel {
+			t.Errorf("messageRegex(%q) = (%q, %q, %q, %q, %q), want (%q, %q, %q, %q, %q)",
+				tt.input, gotFrom, gotArrow, gotAct, gotTo, gotLabel, tt.wantFrom, tt.wantArrow, tt.wantAct, tt.wantTo, tt.wantLabel)
 		}
 	}
 }
@@ -267,6 +271,38 @@ B-->>A: Done`
 		t.Fatalf("render error: %v", err)
 	}
 	for _, want := range []string{"Work", "Done", "┃"} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("output missing %q\noutput:\n%s", want, output)
+		}
+	}
+}
+
+func TestSequenceActivationShorthand(t *testing.T) {
+	input := `sequenceDiagram
+A->>+B: Start
+B-->>-A: Done`
+
+	d, err := Parse(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(d.Activations) != 2 {
+		t.Fatalf("activations = %d, want 2", len(d.Activations))
+	}
+	first := d.Messages[0]
+	if first.PostActivation == nil || first.PostActivation.Participant.ID != "B" {
+		t.Fatalf("first message post activation = %#v, want activate B", first.PostActivation)
+	}
+	second := d.Messages[1]
+	if second.PostDeactivation == nil || second.PostDeactivation.Participant.ID != "B" {
+		t.Fatalf("second message post deactivation = %#v, want deactivate B", second.PostDeactivation)
+	}
+
+	output, err := Render(d, diagram.DefaultConfig())
+	if err != nil {
+		t.Fatalf("render error: %v", err)
+	}
+	for _, want := range []string{"Start", "Done", "┃"} {
 		if !strings.Contains(output, want) {
 			t.Fatalf("output missing %q\noutput:\n%s", want, output)
 		}

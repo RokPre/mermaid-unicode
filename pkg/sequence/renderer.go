@@ -129,8 +129,10 @@ func Render(sd *SequenceDiagram, config *diagram.Config) (string, error) {
 		switch {
 		case item.Message != nil && item.Message.From == item.Message.To:
 			lines = append(lines, renderSelfMessage(item.Message, layout, chars, active)...)
+			applyMessageActivation(item.Message, active)
 		case item.Message != nil:
 			lines = append(lines, renderMessage(item.Message, layout, chars, active)...)
+			applyMessageActivation(item.Message, active)
 		case item.Note != nil:
 			lines = append(lines, renderNote(item.Note, layout, chars, active)...)
 		case item.Activation != nil:
@@ -146,6 +148,15 @@ func Render(sd *SequenceDiagram, config *diagram.Config) (string, error) {
 
 	lines = append(lines, buildLifelineWithActivation(layout, chars, active))
 	return strings.Join(lines, "\n") + "\n", nil
+}
+
+func applyMessageActivation(msg *Message, active map[int]bool) {
+	if msg.PostActivation != nil {
+		active[msg.PostActivation.Participant.Index] = true
+	}
+	if msg.PostDeactivation != nil {
+		delete(active, msg.PostDeactivation.Participant.Index)
+	}
 }
 
 func buildLine(participants []*Participant, layout *diagramLayout, draw func(int) string) string {

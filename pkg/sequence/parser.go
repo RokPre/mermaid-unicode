@@ -21,8 +21,8 @@ var (
 	// actorRegex matches actor declarations: actor [ID] [as Label]
 	actorRegex = regexp.MustCompile(`^\s*actor\s+(?:"([^"]+)"|(\S+))(?:\s+as\s+(.+))?$`)
 
-	// messageRegex matches messages: [From]->>[To]: [Label]
-	messageRegex = regexp.MustCompile(`^\s*(?:"([^"]+)"|([^\s\->]+))\s*(-->>|->>)\s*(?:"([^"]+)"|([^\s\->]+))\s*:\s*(.*)$`)
+	// messageRegex matches messages: [From]->>[To]: [Label], with optional +/- activation suffix.
+	messageRegex = regexp.MustCompile(`^\s*(?:"([^"]+)"|([^\s\->]+))\s*(-->>|->>)([+-]?)\s*(?:"([^"]+)"|([^\s\->]+))\s*:\s*(.*)$`)
 
 	// noteRegex matches notes: Note left of A: text, Note right of A: text, Note over A,B: text
 	noteRegex = regexp.MustCompile(`^\s*Note\s+(left of|right of|over)\s+(.+?)\s*:\s*(.*)$`)
@@ -51,11 +51,13 @@ type Participant struct {
 }
 
 type Message struct {
-	From      *Participant
-	To        *Participant
-	Label     string
-	ArrowType ArrowType
-	Number    int // Message number when autonumber is enabled (0 means no number)
+	From             *Participant
+	To               *Participant
+	Label            string
+	ArrowType        ArrowType
+	Number           int // Message number when autonumber is enabled (0 means no number)
+	PostActivation   *Activation
+	PostDeactivation *Activation
 }
 
 type SequenceItem struct {
@@ -293,12 +295,14 @@ func (sd *SequenceDiagram) parseMessage(line string, participants map[string]*Pa
 
 	arrow := match[3]
 
-	toID := match[5]
-	if match[4] != "" {
-		toID = match[4]
+	activationSuffix := match[4]
+
+	toID := match[6]
+	if match[5] != "" {
+		toID = match[5]
 	}
 
-	label := strings.TrimSpace(match[6])
+	label := strings.TrimSpace(match[7])
 
 	from := sd.getParticipant(fromID, participants)
 	to := sd.getParticipant(toID, participants)
@@ -319,6 +323,16 @@ func (sd *SequenceDiagram) parseMessage(line string, participants map[string]*Pa
 		Label:     label,
 		ArrowType: aType,
 		Number:    msgNumber,
+	}
+	switch activationSuffix {
+	case "+":
+		activation := &Activation{Participant: to, Active: true}
+		msg.PostActivation = activation
+		sd.Activations = append(sd.Activations, activation)
+	case "-":
+		activation := &Activation{Participant: from, Active: false}
+		msg.PostDeactivation = activation
+		sd.Activations = append(sd.Activations, activation)
 	}
 	sd.Messages = append(sd.Messages, msg)
 	sd.Items = append(sd.Items, &SequenceItem{Message: msg})
