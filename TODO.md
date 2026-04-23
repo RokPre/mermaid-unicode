@@ -25,6 +25,7 @@ No current task selected.
 
 - [x] 0 Architecture add-diagram-registry
 - [x] 1 Flowchart audit-flowchart-parity
+- [x] 1 Sequence add-sequence-actor-declarations
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 1 Flowchart add-open-solid-connectors
@@ -120,6 +121,34 @@ Acceptance criteria:
 
 Notes:
 This closes the current `audit-flowchart-parity` task at the documented terminal-renderer subset.
+
+### add-sequence-actor-declarations
+
+Priority: 1
+Area: Sequence
+Status: done
+Depends on: add-diagram-registry
+
+Goal:
+Support Mermaid sequence `actor` declarations and aliases.
+
+Context:
+The sequence parser already supported `participant` declarations, aliases, and implicit participants from messages. Mermaid sequence diagrams also allow `actor` declarations. The current terminal renderer does not have a separate actor glyph, so actors are rendered through the same participant box layout while preserving ids and labels.
+
+Expected changes:
+- Parse `actor Alice`.
+- Parse `actor A as Alice`.
+- Parse quoted actor ids such as `actor "External User" as User`.
+- Render actor labels in the existing sequence participant row.
+- Add parser and render tests.
+
+Acceptance criteria:
+- Actor declarations create participants with the expected id and label.
+- Actor aliases render the alias label.
+- `go test ./...` passes.
+
+Notes:
+This is a first bounded slice of `expand-sequence-core`; visual actor-specific glyphs can be a later renderer enhancement if needed.
 
 ### add-expanded-shape-syntax
 

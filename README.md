@@ -656,6 +656,7 @@ Note that with `--coords` enabled, the grid-coords shown show the starting locat
 - [x] Self-messages (`A->>A: think`)
 - [x] Participant declarations (`participant Alice`)
 - [x] Participant aliases (`participant A as Alice`)
+- [x] Actor declarations and aliases (`actor A as Alice`)
 - [x] Unicode support (emojis, CJK characters, etc.)
 - [x] Both ASCII and Unicode rendering modes
 - [ ] Activation boxes

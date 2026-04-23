@@ -109,6 +109,46 @@ func TestParticipantAlias(t *testing.T) {
 	}
 }
 
+func TestActorDeclaration(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		wantID    string
+		wantLabel string
+	}{
+		{"actor defaults label to id", "sequenceDiagram\nactor Alice\nAlice->>Alice: Think", "Alice", "Alice"},
+		{"actor alias", "sequenceDiagram\nactor A as Alice\nA->>A: Think", "A", "Alice"},
+		{"quoted actor", "sequenceDiagram\nactor \"External User\" as User\n\"External User\"->>\"External User\": Think", "External User", "User"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d, err := Parse(tt.input)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if len(d.Participants) == 0 {
+				t.Fatal("expected at least one participant")
+			}
+			p := d.Participants[0]
+			if p.ID != tt.wantID {
+				t.Errorf("ID = %q, want %q", p.ID, tt.wantID)
+			}
+			if p.Label != tt.wantLabel {
+				t.Errorf("Label = %q, want %q", p.Label, tt.wantLabel)
+			}
+
+			output, err := Render(d, diagram.DefaultConfig())
+			if err != nil {
+				t.Fatalf("render error: %v", err)
+			}
+			if !strings.Contains(output, tt.wantLabel) {
+				t.Errorf("output should contain actor label %q", tt.wantLabel)
+			}
+		})
+	}
+}
+
 func TestMessageRegex(t *testing.T) {
 	tests := []struct {
 		input     string
@@ -180,6 +220,36 @@ func TestParticipantRegex(t *testing.T) {
 
 		if gotID != tt.wantID || gotAlias != tt.wantAlias {
 			t.Errorf("participantRegex(%q) = (%q, %q), want (%q, %q)",
+				tt.input, gotID, gotAlias, tt.wantID, tt.wantAlias)
+		}
+	}
+}
+
+func TestActorRegex(t *testing.T) {
+	tests := []struct {
+		input     string
+		wantID    string
+		wantAlias string
+	}{
+		{"actor Alice", "Alice", ""},
+		{"actor Alice as A", "Alice", "A"},
+		{`actor "External User"`, "External User", ""},
+		{`actor "External User" as User`, "External User", "User"},
+	}
+
+	for _, tt := range tests {
+		match := actorRegex.FindStringSubmatch(tt.input)
+		if match == nil {
+			t.Fatalf("actorRegex failed to match: %q", tt.input)
+		}
+		gotID := match[2]
+		if match[1] != "" {
+			gotID = match[1]
+		}
+		gotAlias := match[3]
+
+		if gotID != tt.wantID || gotAlias != tt.wantAlias {
+			t.Errorf("actorRegex(%q) = ID %q alias %q, want ID %q alias %q",
 				tt.input, gotID, gotAlias, tt.wantID, tt.wantAlias)
 		}
 	}

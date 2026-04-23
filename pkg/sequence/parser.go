@@ -18,6 +18,9 @@ var (
 	// participantRegex matches participant declarations: participant [ID] [as Label]
 	participantRegex = regexp.MustCompile(`^\s*participant\s+(?:"([^"]+)"|(\S+))(?:\s+as\s+(.+))?$`)
 
+	// actorRegex matches actor declarations: actor [ID] [as Label]
+	actorRegex = regexp.MustCompile(`^\s*actor\s+(?:"([^"]+)"|(\S+))(?:\s+as\s+(.+))?$`)
+
 	// messageRegex matches messages: [From]->>[To]: [Label]
 	messageRegex = regexp.MustCompile(`^\s*(?:"([^"]+)"|([^\s\->]+))\s*(-->>|->>)\s*(?:"([^"]+)"|([^\s\->]+))\s*:\s*(.*)$`)
 
@@ -136,6 +139,9 @@ func Parse(input string) (*SequenceDiagram, error) {
 
 func (sd *SequenceDiagram) parseParticipant(line string, participants map[string]*Participant) (bool, error) {
 	match := participantRegex.FindStringSubmatch(line)
+	if match == nil {
+		match = actorRegex.FindStringSubmatch(line)
+	}
 	if match == nil {
 		return false, nil
 	}
