@@ -262,6 +262,17 @@ func TestRenderGraphUsesStyledEdgeGlyphs(t *testing.T) {
 	if strings.Contains(openDashedOutput, "►") {
 		t.Fatalf("expected open dashed output not to contain an arrowhead\noutput:\n%s", openDashedOutput)
 	}
+
+	openSolidOutput, err := RenderDiagram("graph LR\nA --- B\nA ---|open| C", config)
+	if err != nil {
+		t.Fatalf("RenderDiagram() open solid error = %v", err)
+	}
+	if !strings.Contains(openSolidOutput, "─") || !strings.Contains(openSolidOutput, "open") {
+		t.Fatalf("expected open solid output to contain solid line and label\noutput:\n%s", openSolidOutput)
+	}
+	if strings.Contains(openSolidOutput, "►") {
+		t.Fatalf("expected open solid output not to contain an arrowhead\noutput:\n%s", openSolidOutput)
+	}
 }
 
 func TestRenderGraphUsesConfiguredDefaultStyles(t *testing.T) {

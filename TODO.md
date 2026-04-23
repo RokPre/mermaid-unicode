@@ -27,6 +27,7 @@ No current task selected.
 - [x] 0 Architecture add-diagram-registry
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
+- [x] 1 Flowchart add-open-solid-connectors
 - [x] 0 Graph existing-flowchart-renderer
 - [x] 0 Sequence existing-sequence-renderer
 - [x] 1 Graph add-unicode-graph-rendering
@@ -150,6 +151,33 @@ Acceptance criteria:
 
 Notes:
 This completes the reverse-direction slice of `audit-flowchart-parity`. Complex subgraph layouts in reversed directions may still need golden fixtures later.
+
+### add-open-solid-connectors
+
+Priority: 1
+Area: Flowchart
+Status: done
+Depends on: add-diagram-registry
+
+Goal:
+Support Mermaid open solid flowchart connectors using `---` and labeled `---|label|` syntax.
+
+Context:
+The renderer already supported arrow connectors `-->`, heavy arrows `==>`, dashed arrows `-.->`, and open dashed connectors `-.-`. Mermaid flowcharts also use `---` for links without arrowheads.
+
+Expected changes:
+- Parse `A --- B` as a light connector without an arrowhead.
+- Parse `A ---|label| B` as a labeled light connector without an arrowhead.
+- Preserve existing arrow and dashed connector behavior.
+- Add parser and render tests proving open solid connectors do not draw arrowheads.
+
+Acceptance criteria:
+- `A --- B` renders a solid line between nodes with no arrowhead.
+- `A ---|open| B` preserves the label and still omits the arrowhead.
+- `go test ./...` passes.
+
+Notes:
+This completes one more connector slice under `audit-flowchart-parity`; bidirectional, circle-head, and cross-head operators remain future work.
 
 ### expand-sequence-core
 

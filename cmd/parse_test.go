@@ -354,7 +354,7 @@ func TestMermaidFileToMapParsesReverseDirections(t *testing.T) {
 }
 
 func TestMermaidFileToMapParsesEdgeLineStyles(t *testing.T) {
-	properties, err := mermaidFileToMap("graph LR\nA ==> B\nA ==>|heavy| C\nA -.-> D\nA -.->|dash| E\nA -.- F", "cli")
+	properties, err := mermaidFileToMap("graph LR\nA ==> B\nA ==>|heavy| C\nA -.-> D\nA -.->|dash| E\nA -.- F\nA --- G\nA ---|open| H", "cli")
 	if err != nil {
 		t.Fatalf("mermaidFileToMap() error = %v", err)
 	}
@@ -380,6 +380,8 @@ func TestMermaidFileToMapParsesEdgeLineStyles(t *testing.T) {
 		{child: "D", wantStyle: graphEdgeLineStyleDashed, wantHasArrowHead: true},
 		{child: "E", wantStyle: graphEdgeLineStyleDashed, wantLabel: "dash", wantHasArrowHead: true},
 		{child: "F", wantStyle: graphEdgeLineStyleDashed, wantHasArrowHead: false},
+		{child: "G", wantStyle: graphEdgeLineStyleLight, wantHasArrowHead: false},
+		{child: "H", wantStyle: graphEdgeLineStyleLight, wantLabel: "open", wantHasArrowHead: false},
 	}
 
 	for _, tt := range tests {
