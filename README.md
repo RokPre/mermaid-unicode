@@ -693,6 +693,13 @@ Note that with `--coords` enabled, the grid-coords shown show the starting locat
 - [x] First-pass choice, fork, join, notes, and composite state frames
 - [x] ASCII and Unicode rendering modes
 
+### Requirement Diagrams ✅
+- [x] `requirementDiagram` detection and rendering
+- [x] Requirement and element blocks
+- [x] Field rows such as `id`, `text`, `risk`, `verifymethod`, `type`, and `docref`
+- [x] Relationships (`contains`, `copies`, `derives`, `satisfies`, `verifies`, `refines`, `traces`)
+- [x] ASCII and Unicode rendering modes
+
 ## TODOs
 
 The baseline components for Mermaid work, but there are a lot of things that are not supported yet. Here's a list of things that are not yet supported:

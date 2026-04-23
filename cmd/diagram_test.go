@@ -63,6 +63,14 @@ Animal <|-- Duck`,
 [*] --> Still`,
 			want: "state",
 		},
+		{
+			name: "requirement diagram",
+			input: `requirementDiagram
+requirement req {
+  id: 1
+}`,
+			want: "requirement",
+		},
 	}
 
 	for _, tt := range tests {
@@ -89,7 +97,6 @@ func TestDiagramFactoryRejectsKnownUnsupportedTypes(t *testing.T) {
 		{name: "gantt", input: "gantt\ntitle Plan", wantType: "gantt"},
 		{name: "pie", input: "pie showData\ntitle Shares", wantType: "pie"},
 		{name: "quadrant", input: "quadrantChart\ntitle Risk", wantType: "quadrantChart"},
-		{name: "requirement", input: "requirementDiagram\nrequirement req {}", wantType: "requirementDiagram"},
 		{name: "gitgraph", input: "gitGraph LR:\ncommit", wantType: "gitGraph"},
 		{name: "mindmap", input: "mindmap\n  Root", wantType: "mindmap"},
 		{name: "timeline", input: "timeline\ntitle History", wantType: "timeline"},

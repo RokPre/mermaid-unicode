@@ -7,6 +7,7 @@ import (
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/classdiagram"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/diagram"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/er"
+	"github.com/AlexanderGrooff/mermaid-ascii/pkg/requirementdiagram"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/sequence"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/statediagram"
 )
@@ -60,6 +61,15 @@ var supportedDiagramRegistry = []diagramRegistration{
 		},
 	},
 	{
+		typeName: "requirement",
+		detect: func(input, _ string) bool {
+			return requirementdiagram.IsRequirementDiagram(input)
+		},
+		create: func() diagram.Diagram {
+			return &RequirementDiagram{}
+		},
+	},
+	{
 		typeName: "er",
 		detect: func(input, _ string) bool {
 			return er.IsERDiagram(input)
@@ -75,7 +85,6 @@ var unsupportedDiagramRegistry = []unsupportedDiagramRegistration{
 	{typeName: "gantt", detect: keywordDetector("gantt")},
 	{typeName: "pie", detect: keywordDetector("pie")},
 	{typeName: "quadrantChart", detect: keywordDetector("quadrantChart")},
-	{typeName: "requirementDiagram", detect: keywordDetector("requirementDiagram")},
 	{typeName: "gitGraph", detect: keywordDetector("gitGraph")},
 	{typeName: "mindmap", detect: keywordDetector("mindmap")},
 	{typeName: "timeline", detect: keywordDetector("timeline")},
@@ -254,6 +263,30 @@ func (sd *StateDiagram) Render(config *diagram.Config) (string, error) {
 
 func (sd *StateDiagram) Type() string {
 	return "state"
+}
+
+type RequirementDiagram struct {
+	parsed *requirementdiagram.Diagram
+}
+
+func (rd *RequirementDiagram) Parse(input string) error {
+	parsed, err := requirementdiagram.Parse(input)
+	if err != nil {
+		return err
+	}
+	rd.parsed = parsed
+	return nil
+}
+
+func (rd *RequirementDiagram) Render(config *diagram.Config) (string, error) {
+	if rd.parsed == nil {
+		return "", fmt.Errorf("requirement diagram not parsed: call Parse() before Render()")
+	}
+	return requirementdiagram.Render(rd.parsed, config)
+}
+
+func (rd *RequirementDiagram) Type() string {
+	return "requirement"
 }
 
 type GraphDiagram struct {
