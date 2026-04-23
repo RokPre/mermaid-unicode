@@ -6,7 +6,6 @@ No current task selected.
 
 ## Active TODOs
 
-- [ ] 4 Timeline add-timeline-renderer
 - [ ] 4 UserJourney add-user-journey-renderer
 - [ ] 4 Charts add-pie-and-quadrant-renderers
 - [ ] 5 Gantt add-gantt-timeline-renderer
@@ -30,6 +29,7 @@ No current task selected.
 - [x] 2 State add-state-diagram-renderer
 - [x] 3 Requirement add-requirement-diagram-renderer
 - [x] 3 Mindmap add-mindmap-tree-renderer
+- [x] 4 Timeline add-timeline-renderer
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 1 Flowchart add-open-solid-connectors
@@ -561,7 +561,7 @@ Completed as an indentation-based terminal tree renderer with Unicode and ASCII 
 
 Priority: 4
 Area: Timeline
-Status: pending
+Status: done
 Depends on: add-diagram-registry, extract-style-and-color-model
 
 Goal:
@@ -583,7 +583,7 @@ Acceptance criteria:
 - `go test ./...` passes.
 
 Notes:
-Do not implement browser theme variables beyond simple terminal color mapping.
+Completed as a conservative source-order renderer for titles, sections, periods, multiple events, and TD/LR output. Browser theme variables remain out of scope.
 
 ### add-user-journey-renderer
 

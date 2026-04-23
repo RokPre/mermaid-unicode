@@ -78,6 +78,12 @@ Root
   Idea`,
 			want: "mindmap",
 		},
+		{
+			name: "timeline",
+			input: `timeline
+2024 : Idea`,
+			want: "timeline",
+		},
 	}
 
 	for _, tt := range tests {
@@ -105,7 +111,6 @@ func TestDiagramFactoryRejectsKnownUnsupportedTypes(t *testing.T) {
 		{name: "pie", input: "pie showData\ntitle Shares", wantType: "pie"},
 		{name: "quadrant", input: "quadrantChart\ntitle Risk", wantType: "quadrantChart"},
 		{name: "gitgraph", input: "gitGraph LR:\ncommit", wantType: "gitGraph"},
-		{name: "timeline", input: "timeline\ntitle History", wantType: "timeline"},
 		{name: "zenuml", input: "zenuml\nA.method()", wantType: "zenuml"},
 	}
 

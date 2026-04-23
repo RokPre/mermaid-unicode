@@ -706,6 +706,12 @@ Note that with `--coords` enabled, the grid-coords shown show the starting locat
 - [x] Unicode tree glyphs and ASCII fallback
 - [x] Simple terminal-friendly node shape text normalization
 
+### Timelines ✅
+- [x] `timeline` detection and rendering
+- [x] Optional title, sections, periods, and multiple events
+- [x] Vertical (`TD`) and horizontal (`LR`) output
+- [x] ASCII and Unicode rendering modes
+
 ## TODOs
 
 The baseline components for Mermaid work, but there are a lot of things that are not supported yet. Here's a list of things that are not yet supported:

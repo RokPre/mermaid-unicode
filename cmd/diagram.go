@@ -11,6 +11,7 @@ import (
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/requirementdiagram"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/sequence"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/statediagram"
+	"github.com/AlexanderGrooff/mermaid-ascii/pkg/timeline"
 )
 
 type diagramRegistration struct {
@@ -80,6 +81,15 @@ var supportedDiagramRegistry = []diagramRegistration{
 		},
 	},
 	{
+		typeName: "timeline",
+		detect: func(input, _ string) bool {
+			return timeline.IsTimeline(input)
+		},
+		create: func() diagram.Diagram {
+			return &TimelineDiagram{}
+		},
+	},
+	{
 		typeName: "er",
 		detect: func(input, _ string) bool {
 			return er.IsERDiagram(input)
@@ -96,7 +106,6 @@ var unsupportedDiagramRegistry = []unsupportedDiagramRegistration{
 	{typeName: "pie", detect: keywordDetector("pie")},
 	{typeName: "quadrantChart", detect: keywordDetector("quadrantChart")},
 	{typeName: "gitGraph", detect: keywordDetector("gitGraph")},
-	{typeName: "timeline", detect: keywordDetector("timeline")},
 	{typeName: "zenuml", detect: keywordDetector("zenuml")},
 }
 
@@ -320,6 +329,30 @@ func (md *MindmapDiagram) Render(config *diagram.Config) (string, error) {
 
 func (md *MindmapDiagram) Type() string {
 	return "mindmap"
+}
+
+type TimelineDiagram struct {
+	parsed *timeline.Diagram
+}
+
+func (td *TimelineDiagram) Parse(input string) error {
+	parsed, err := timeline.Parse(input)
+	if err != nil {
+		return err
+	}
+	td.parsed = parsed
+	return nil
+}
+
+func (td *TimelineDiagram) Render(config *diagram.Config) (string, error) {
+	if td.parsed == nil {
+		return "", fmt.Errorf("timeline not parsed: call Parse() before Render()")
+	}
+	return timeline.Render(td.parsed, config)
+}
+
+func (td *TimelineDiagram) Type() string {
+	return "timeline"
 }
 
 type GraphDiagram struct {
