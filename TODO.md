@@ -6,7 +6,6 @@ No current task selected.
 
 ## Active TODOs
 
-- [ ] 5 Gantt add-gantt-timeline-renderer
 - [ ] 5 Gitgraph add-gitgraph-lane-renderer
 - [ ] 7 ZenUML defer-zenuml-subset
 - [ ] 8 Docs document-supported-mermaid-subsets
@@ -30,6 +29,7 @@ No current task selected.
 - [x] 4 Timeline add-timeline-renderer
 - [x] 4 UserJourney add-user-journey-renderer
 - [x] 4 Charts add-pie-and-quadrant-renderers
+- [x] 5 Gantt add-gantt-timeline-renderer
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 1 Flowchart add-open-solid-connectors
@@ -647,7 +647,7 @@ Completed as practical terminal renderers: pie charts use percentage bars and qu
 
 Priority: 5
 Area: Gantt
-Status: pending
+Status: done
 Depends on: add-diagram-registry
 
 Goal:
@@ -669,7 +669,7 @@ Acceptance criteria:
 - `go test ./...` passes.
 
 Notes:
-Full Day.js date parsing and exclude/weekend parity should wait until the core renderer is stable.
+Completed as a conservative terminal task-bar renderer for title, date format, sections, and source-order task rows. Full Day.js parsing, date scaling, exclude/weekend parity, and milestones remain future work.
 
 ### add-gitgraph-lane-renderer
 

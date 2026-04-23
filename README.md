@@ -726,6 +726,12 @@ Note that with `--coords` enabled, the grid-coords shown show the starting locat
 - [x] Quadrant point labels and 0..1 coordinate validation
 - [x] ASCII and Unicode rendering modes
 
+### Gantt Charts ✅
+- [x] `gantt` detection and rendering
+- [x] Title, date format, sections, and task rows
+- [x] Deterministic terminal task bars
+- [x] ASCII and Unicode rendering modes
+
 ## TODOs
 
 The baseline components for Mermaid work, but there are a lot of things that are not supported yet. Here's a list of things that are not yet supported:
