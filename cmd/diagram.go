@@ -8,28 +8,129 @@ import (
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/sequence"
 )
 
+type diagramRegistration struct {
+	typeName string
+	detect   func(input, firstLine string) bool
+	create   func() diagram.Diagram
+}
+
+type unsupportedDiagramRegistration struct {
+	typeName string
+	detect   func(firstLine string) bool
+}
+
+var supportedDiagramRegistry = []diagramRegistration{
+	{
+		typeName: "sequence",
+		detect: func(input, _ string) bool {
+			return sequence.IsSequenceDiagram(input)
+		},
+		create: func() diagram.Diagram {
+			return &SequenceDiagram{}
+		},
+	},
+	{
+		typeName: "graph",
+		detect: func(_ string, firstLine string) bool {
+			return hasMermaidKeyword(firstLine, "graph") || hasMermaidKeyword(firstLine, "flowchart")
+		},
+		create: func() diagram.Diagram {
+			return &GraphDiagram{}
+		},
+	},
+}
+
+var unsupportedDiagramRegistry = []unsupportedDiagramRegistration{
+	{typeName: "classDiagram", detect: keywordDetector("classDiagram")},
+	{typeName: "stateDiagram", detect: anyKeywordDetector("stateDiagram", "stateDiagram-v2")},
+	{typeName: "erDiagram", detect: keywordDetector("erDiagram")},
+	{typeName: "journey", detect: keywordDetector("journey")},
+	{typeName: "gantt", detect: keywordDetector("gantt")},
+	{typeName: "pie", detect: keywordDetector("pie")},
+	{typeName: "quadrantChart", detect: keywordDetector("quadrantChart")},
+	{typeName: "requirementDiagram", detect: keywordDetector("requirementDiagram")},
+	{typeName: "gitGraph", detect: keywordDetector("gitGraph")},
+	{typeName: "mindmap", detect: keywordDetector("mindmap")},
+	{typeName: "timeline", detect: keywordDetector("timeline")},
+	{typeName: "zenuml", detect: keywordDetector("zenuml")},
+}
+
 func DiagramFactory(input string) (diagram.Diagram, error) {
 	input = strings.TrimSpace(input)
 
-	if sequence.IsSequenceDiagram(input) {
-		return &SequenceDiagram{}, nil
+	firstLine, ok := firstDiagramLine(input)
+	if !ok {
+		return nil, fmt.Errorf("missing diagram definition. Supported diagram types: %s", supportedDiagramTypes())
 	}
 
-	lines := strings.Split(input, "\n")
-	for _, line := range lines {
+	for _, registered := range supportedDiagramRegistry {
+		if registered.detect(input, firstLine) {
+			return registered.create(), nil
+		}
+	}
+
+	for _, registered := range unsupportedDiagramRegistry {
+		if registered.detect(firstLine) {
+			return nil, fmt.Errorf("unsupported diagram type %q. Supported diagram types: %s", registered.typeName, supportedDiagramTypes())
+		}
+	}
+
+	return nil, fmt.Errorf("unknown diagram type in first content line %q. Supported diagram types: %s", firstLine, supportedDiagramTypes())
+}
+
+func firstDiagramLine(input string) (string, bool) {
+	for _, line := range strings.Split(input, "\n") {
 		trimmed := strings.TrimSpace(line)
-		if trimmed == "" || strings.HasPrefix(trimmed, "%%") {
+		if trimmed == "" || strings.HasPrefix(trimmed, "%%") || isGraphPaddingDirective(trimmed) {
 			continue
 		}
-		if strings.HasPrefix(trimmed, "graph ") || strings.HasPrefix(trimmed, "flowchart ") {
-			return &GraphDiagram{}, nil
-		}
-		if !strings.HasPrefix(trimmed, "%%") {
-			return &GraphDiagram{}, nil
-		}
+		return trimmed, true
 	}
+	return "", false
+}
 
-	return &GraphDiagram{}, nil
+func isGraphPaddingDirective(line string) bool {
+	lower := strings.ToLower(strings.TrimSpace(line))
+	return strings.HasPrefix(lower, "paddingx") || strings.HasPrefix(lower, "paddingy")
+}
+
+func hasMermaidKeyword(line, keyword string) bool {
+	if line == keyword {
+		return true
+	}
+	if !strings.HasPrefix(line, keyword) {
+		return false
+	}
+	if len(line) == len(keyword) {
+		return true
+	}
+	next := line[len(keyword)]
+	return next == ' ' || next == '\t' || next == ':'
+}
+
+func keywordDetector(keyword string) func(string) bool {
+	return func(firstLine string) bool {
+		return hasMermaidKeyword(firstLine, keyword)
+	}
+}
+
+func anyKeywordDetector(keywords ...string) func(string) bool {
+	return func(firstLine string) bool {
+		for _, keyword := range keywords {
+			if hasMermaidKeyword(firstLine, keyword) {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+func supportedDiagramTypes() string {
+	types := make([]string, 0, len(supportedDiagramRegistry))
+	for _, registered := range supportedDiagramRegistry {
+		types = append(types, registered.typeName)
+	}
+	return strings.Join(types, ", ")
 }
 
 type SequenceDiagram struct {
