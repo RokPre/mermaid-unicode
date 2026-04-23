@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/AlexanderGrooff/mermaid-ascii/pkg/charts"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/classdiagram"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/diagram"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/er"
@@ -100,6 +101,24 @@ var supportedDiagramRegistry = []diagramRegistration{
 		},
 	},
 	{
+		typeName: "pie",
+		detect: func(input, _ string) bool {
+			return charts.IsPie(input)
+		},
+		create: func() diagram.Diagram {
+			return &PieDiagram{}
+		},
+	},
+	{
+		typeName: "quadrant",
+		detect: func(input, _ string) bool {
+			return charts.IsQuadrant(input)
+		},
+		create: func() diagram.Diagram {
+			return &QuadrantDiagram{}
+		},
+	},
+	{
 		typeName: "er",
 		detect: func(input, _ string) bool {
 			return er.IsERDiagram(input)
@@ -112,8 +131,6 @@ var supportedDiagramRegistry = []diagramRegistration{
 
 var unsupportedDiagramRegistry = []unsupportedDiagramRegistration{
 	{typeName: "gantt", detect: keywordDetector("gantt")},
-	{typeName: "pie", detect: keywordDetector("pie")},
-	{typeName: "quadrantChart", detect: keywordDetector("quadrantChart")},
 	{typeName: "gitGraph", detect: keywordDetector("gitGraph")},
 	{typeName: "zenuml", detect: keywordDetector("zenuml")},
 }
@@ -386,6 +403,54 @@ func (jd *JourneyDiagram) Render(config *diagram.Config) (string, error) {
 
 func (jd *JourneyDiagram) Type() string {
 	return "journey"
+}
+
+type PieDiagram struct {
+	parsed *charts.PieDiagram
+}
+
+func (pd *PieDiagram) Parse(input string) error {
+	parsed, err := charts.ParsePie(input)
+	if err != nil {
+		return err
+	}
+	pd.parsed = parsed
+	return nil
+}
+
+func (pd *PieDiagram) Render(config *diagram.Config) (string, error) {
+	if pd.parsed == nil {
+		return "", fmt.Errorf("pie chart not parsed: call Parse() before Render()")
+	}
+	return charts.RenderPie(pd.parsed, config)
+}
+
+func (pd *PieDiagram) Type() string {
+	return "pie"
+}
+
+type QuadrantDiagram struct {
+	parsed *charts.QuadrantDiagram
+}
+
+func (qd *QuadrantDiagram) Parse(input string) error {
+	parsed, err := charts.ParseQuadrant(input)
+	if err != nil {
+		return err
+	}
+	qd.parsed = parsed
+	return nil
+}
+
+func (qd *QuadrantDiagram) Render(config *diagram.Config) (string, error) {
+	if qd.parsed == nil {
+		return "", fmt.Errorf("quadrant chart not parsed: call Parse() before Render()")
+	}
+	return charts.RenderQuadrant(qd.parsed, config)
+}
+
+func (qd *QuadrantDiagram) Type() string {
+	return "quadrant"
 }
 
 type GraphDiagram struct {

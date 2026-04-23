@@ -719,6 +719,13 @@ Note that with `--coords` enabled, the grid-coords shown show the starting locat
 - [x] Actor lists and proportional score bars
 - [x] ASCII and Unicode rendering modes
 
+### Pie And Quadrant Charts ✅
+- [x] `pie` detection and percentage bar rendering
+- [x] `quadrantChart` detection and fixed-grid rendering
+- [x] Pie labels, values, totals, and percentages
+- [x] Quadrant point labels and 0..1 coordinate validation
+- [x] ASCII and Unicode rendering modes
+
 ## TODOs
 
 The baseline components for Mermaid work, but there are a lot of things that are not supported yet. Here's a list of things that are not yet supported:

@@ -90,6 +90,18 @@ Root
 Task: 3: Me`,
 			want: "journey",
 		},
+		{
+			name: "pie chart",
+			input: `pie
+Dogs : 75`,
+			want: "pie",
+		},
+		{
+			name: "quadrant chart",
+			input: `quadrantChart
+A: [0.2, 0.8]`,
+			want: "quadrant",
+		},
 	}
 
 	for _, tt := range tests {
@@ -113,8 +125,6 @@ func TestDiagramFactoryRejectsKnownUnsupportedTypes(t *testing.T) {
 		wantMessage string
 	}{
 		{name: "gantt", input: "gantt\ntitle Plan", wantType: "gantt"},
-		{name: "pie", input: "pie showData\ntitle Shares", wantType: "pie"},
-		{name: "quadrant", input: "quadrantChart\ntitle Risk", wantType: "quadrantChart"},
 		{name: "gitgraph", input: "gitGraph LR:\ncommit", wantType: "gitGraph"},
 		{name: "zenuml", input: "zenuml\nA.method()", wantType: "zenuml"},
 	}

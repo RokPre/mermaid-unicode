@@ -6,7 +6,6 @@ No current task selected.
 
 ## Active TODOs
 
-- [ ] 4 Charts add-pie-and-quadrant-renderers
 - [ ] 5 Gantt add-gantt-timeline-renderer
 - [ ] 5 Gitgraph add-gitgraph-lane-renderer
 - [ ] 7 ZenUML defer-zenuml-subset
@@ -30,6 +29,7 @@ No current task selected.
 - [x] 3 Mindmap add-mindmap-tree-renderer
 - [x] 4 Timeline add-timeline-renderer
 - [x] 4 UserJourney add-user-journey-renderer
+- [x] 4 Charts add-pie-and-quadrant-renderers
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 1 Flowchart add-open-solid-connectors
@@ -618,7 +618,7 @@ Completed as a sectioned terminal task table with score validation and proportio
 
 Priority: 4
 Area: Charts
-Status: pending
+Status: done
 Depends on: add-diagram-registry, extract-style-and-color-model
 
 Goal:
@@ -641,7 +641,7 @@ Acceptance criteria:
 - `go test ./...` passes.
 
 Notes:
-Do not try to draw circular pies in the terminal.
+Completed as practical terminal renderers: pie charts use percentage bars and quadrant charts use a fixed coordinate grid. Circular pie geometry remains out of scope.
 
 ### add-gantt-timeline-renderer
 
