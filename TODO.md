@@ -6,7 +6,6 @@ No current task selected.
 
 ## Active TODOs
 
-- [ ] 2 ER add-er-diagram-renderer
 - [ ] 2 Class add-class-diagram-renderer
 - [ ] 2 State add-state-diagram-renderer
 - [ ] 3 Requirement add-requirement-diagram-renderer
@@ -30,6 +29,7 @@ No current task selected.
 - [x] 1 Sequence expand-sequence-core
 - [x] 1 Sequence add-sequence-fragment-frames
 - [x] 2 Shared extract-style-and-color-model
+- [x] 2 ER add-er-diagram-renderer
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 1 Flowchart add-open-solid-connectors
@@ -416,7 +416,7 @@ Completed as a small shared `pkg/diagram` style model. Graph parsing and renderi
 
 Priority: 2
 Area: ER
-Status: pending
+Status: done
 Depends on: add-diagram-registry, extract-style-and-color-model
 
 Goal:
@@ -439,7 +439,7 @@ Acceptance criteria:
 - `go test ./...` passes.
 
 Notes:
-Exact crow's foot geometry is not required; stable readable markers are.
+Completed as a stable terminal ER subset: entity aliases, attribute compartments, key markers, identifying and non-identifying relationships, and ASCII/Unicode cardinality connectors are supported. Exact crow's foot geometry remains out of scope.
 
 ### add-class-diagram-renderer
 

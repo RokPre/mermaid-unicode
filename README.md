@@ -668,6 +668,14 @@ Note that with `--coords` enabled, the grid-coords shown show the starting locat
 - [x] Notes (`Note left of Alice: text`)
 - [x] Loops, alt, opt, and par blocks
 
+### ER Diagrams ✅
+- [x] `erDiagram` detection and rendering
+- [x] Entity declarations and aliases (`CUSTOMER[Customer]`)
+- [x] Entity attribute blocks with key markers (`PK`, `FK`, `UK`)
+- [x] Identifying (`--`) and non-identifying (`..`) relationships
+- [x] Cardinality markers such as `||`, `|o`, `o{`, `}o`, and `}|`
+- [x] ASCII and Unicode rendering modes
+
 ## TODOs
 
 The baseline components for Mermaid work, but there are a lot of things that are not supported yet. Here's a list of things that are not yet supported:

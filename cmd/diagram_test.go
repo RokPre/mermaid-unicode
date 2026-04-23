@@ -45,6 +45,12 @@ graph LR
     A-->B`,
 			want: "graph",
 		},
+		{
+			name: "er diagram",
+			input: `erDiagram
+CUSTOMER ||--o{ ORDER : places`,
+			want: "er",
+		},
 	}
 
 	for _, tt := range tests {
@@ -69,7 +75,6 @@ func TestDiagramFactoryRejectsKnownUnsupportedTypes(t *testing.T) {
 	}{
 		{name: "class", input: "classDiagram\nA <|-- B", wantType: "classDiagram"},
 		{name: "state", input: "stateDiagram-v2\n[*] --> Still", wantType: "stateDiagram"},
-		{name: "er", input: "erDiagram\nA ||--|| B : owns", wantType: "erDiagram"},
 		{name: "journey", input: "journey\ntitle Flow", wantType: "journey"},
 		{name: "gantt", input: "gantt\ntitle Plan", wantType: "gantt"},
 		{name: "pie", input: "pie showData\ntitle Shares", wantType: "pie"},
