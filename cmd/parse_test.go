@@ -281,3 +281,34 @@ func TestMermaidFileToMapParsesEdgeLineStyles(t *testing.T) {
 		})
 	}
 }
+
+func TestMermaidFileToMapParsesClassAndLinkStyles(t *testing.T) {
+	properties, err := mermaidFileToMap("graph LR\nA -->|go| B\nclass A warning\nclassDef warning stroke:#ff0000,color:#00ff00,fill:#111111;\nlinkStyle 0 stroke:#0000ff,color:#ff00ff;", "cli")
+	if err != nil {
+		t.Fatalf("mermaidFileToMap() error = %v", err)
+	}
+
+	spec := properties.nodeSpecs["A"]
+	if spec.styleClass != "warning" {
+		t.Fatalf("styleClass = %q, want warning", spec.styleClass)
+	}
+
+	nodeStyle := (*properties.styleClasses)["warning"].styles
+	if nodeStyle["stroke"] != "#ff0000" {
+		t.Fatalf("node stroke = %q, want #ff0000", nodeStyle["stroke"])
+	}
+	if nodeStyle["color"] != "#00ff00" {
+		t.Fatalf("node color = %q, want #00ff00", nodeStyle["color"])
+	}
+	if nodeStyle["fill"] != "#111111" {
+		t.Fatalf("node fill = %q, want #111111", nodeStyle["fill"])
+	}
+
+	edgeStyle := properties.edgeStyles[0].styles
+	if edgeStyle["stroke"] != "#0000ff" {
+		t.Fatalf("edge stroke = %q, want #0000ff", edgeStyle["stroke"])
+	}
+	if edgeStyle["color"] != "#ff00ff" {
+		t.Fatalf("edge color = %q, want #ff00ff", edgeStyle["color"])
+	}
+}

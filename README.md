@@ -521,16 +521,43 @@ $ mermaid-ascii -f complex.mermaid
 
 ```
 
-Colored output is also supported (given that your terminal supports it) using the `classDef` syntax:
+Colored output is also supported in terminals that support ANSI colors and in the web renderer.
+
+Use `classDef` with `:::className` or `class nodeId className` to color node text, box borders, and node fill:
 
 ```bash
 graph LR
-classDef example1 color:#ff0000
-classDef example2 color:#00ff00
-classDef example3 color:#0000ff
-test1:::example1 --> test2
-test2:::example2 --> test3:::example3
+classDef idea stroke:#2f80ed,color:#2f80ed,fill:#eaf3ff
+classDef done stroke:#27ae60,color:#145a32,fill:#eafff2
+
+A[Idea]:::idea --> B[Done]:::done
 ```
+
+Supported node color keys:
+
+| Style key | Effect |
+| --- | --- |
+| `stroke` | Node box border color |
+| `color` | Node label text color |
+| `fill` | Node interior background color |
+
+Use `linkStyle` to color arrows and edge labels by edge index:
+
+```bash
+graph LR
+A[Idea] -->|research| B[Research]
+B ==> C[Plan]
+
+linkStyle 0 stroke:#f2994a,color:#9b5100
+linkStyle 1 stroke:#eb5757,color:#eb5757
+```
+
+Supported edge color keys:
+
+| Style key | Effect |
+| --- | --- |
+| `stroke` | Arrow or connector color |
+| `color` | Edge label text color. If omitted, the label uses `stroke`. |
 
 This results in the following graph:
 

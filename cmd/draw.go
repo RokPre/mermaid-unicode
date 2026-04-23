@@ -29,13 +29,16 @@ func (g *graph) drawEdge(e *edge) (*drawing, *drawing, *drawing, *drawing, *draw
 	return g.drawArrow(from, to, e)
 }
 
-func (d *drawing) drawText(start drawingCoord, text string) {
+func (d *drawing) drawText(start drawingCoord, text string) []drawingCoord {
 	// Increase dimensions if necessary.
 	d.increaseSize(start.x+len(text), start.y)
 	log.Debug("Drawing '", text, "' from ", start, " to ", drawingCoord{x: start.x + len(text), y: start.y})
+	coords := make([]drawingCoord, 0, len(text))
 	for x := 0; x < len(text); x++ {
 		(*d)[x+start.x][start.y] = string(text[x])
+		coords = append(coords, drawingCoord{x: x + start.x, y: start.y})
 	}
+	return coords
 }
 
 func (g *graph) drawLine(d *drawing, from drawingCoord, to drawingCoord, offsetFrom int, offsetTo int, chars graphLineChars) []drawingCoord {
@@ -89,7 +92,7 @@ func (g *graph) drawLine(d *drawing, from drawingCoord, to drawingCoord, offsetF
 }
 
 func drawMap(properties *graphProperties) string {
-	g := mkGraph(properties.data, properties.nodeSpecs)
+	g := mkGraph(properties.data, properties.nodeSpecs, properties.edgeStyles)
 	g.setStyleClasses(properties)
 	g.paddingX = properties.paddingX
 	g.paddingY = properties.paddingY
@@ -143,7 +146,7 @@ func drawBox(n *node, g graph) *drawing {
 		textX := from.x + w/2 - CeilDiv(textWidth, 2) + 1
 		for _, r := range line {
 			runeWidth := Max(runewidth.RuneWidth(r), 1)
-			boxDrawing[textX][textY] = wrapTextInColor(string(r), n.styleClass.styles["color"], g.styleType)
+			boxDrawing[textX][textY] = string(r)
 			for offset := 1; offset < runeWidth; offset++ {
 				boxDrawing[textX+offset][textY] = ""
 			}
@@ -226,18 +229,38 @@ func drawSubgraphLabel(sg *subgraph, g graph) (*drawing, drawingCoord) {
 }
 
 func wrapTextInColor(text, c, styleType string) string {
-	if c == "" {
+	return wrapTextInStyle(text, c, "", styleType)
+}
+
+func wrapTextInStyle(text, fg, bg, styleType string) string {
+	fg = normalizeStyleColor(fg)
+	bg = normalizeStyleColor(bg)
+	if fg == "" && bg == "" {
 		return text
 	}
 	if styleType == "html" {
-		return fmt.Sprintf("<span style='color: %s'>%s</span>", c, text)
+		style := []string{}
+		if fg != "" {
+			style = append(style, fmt.Sprintf("color: %s", fg))
+		}
+		if bg != "" {
+			style = append(style, fmt.Sprintf("background-color: %s", bg))
+		}
+		return fmt.Sprintf("<span style='%s'>%s</span>", strings.Join(style, "; "), text)
 	} else if styleType == "cli" {
-		cliColor := color.HEX(c)
-		return cliColor.Sprint(text)
+		return color.HEXStyle(fg, bg).Sprint(text)
 	} else {
 		log.Warnf("Unknown style type %s", styleType)
 		return text
 	}
+}
+
+func normalizeStyleColor(c string) string {
+	c = strings.TrimSpace(strings.TrimSuffix(c, ";"))
+	if c == "" || strings.EqualFold(c, "none") || strings.EqualFold(c, "transparent") {
+		return ""
+	}
+	return c
 }
 
 func (d *drawing) increaseSize(x int, y int) {

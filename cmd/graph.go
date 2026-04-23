@@ -77,7 +77,7 @@ type subgraph struct {
 	maxY int
 }
 
-func mkGraph(data *orderedmap.OrderedMap[string, []textEdge], nodeSpecs map[string]graphNodeSpec) graph {
+func mkGraph(data *orderedmap.OrderedMap[string, []textEdge], nodeSpecs map[string]graphNodeSpec, edgeStyles map[int]styleClass) graph {
 	g := graph{drawing: mkDrawing(0, 0)}
 	g.grid = make(map[gridCoord]*node)
 	g.edgeCounts = make(map[edgePair]int)
@@ -116,6 +116,7 @@ func mkGraph(data *orderedmap.OrderedMap[string, []textEdge], nodeSpecs map[stri
 				from:         parentNode,
 				to:           childNode,
 				text:         textEdge.label,
+				styleClass:   edgeStyles[textEdge.index],
 				lineStyle:    textEdge.lineStyle,
 				lineStyleSet: textEdge.lineStyleSet,
 				hasArrowHead: textEdge.hasArrowHead,
@@ -613,6 +614,7 @@ func (g *graph) draw() *drawing {
 
 	// Draw subgraph labels LAST so they don't get overwritten by arrows
 	g.drawSubgraphLabels()
+	g.applyColors()
 
 	return g.drawing
 }

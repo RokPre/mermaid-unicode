@@ -14,7 +14,9 @@ import (
 type graphProperties struct {
 	data             *orderedmap.OrderedMap[string, []textEdge]
 	nodeSpecs        map[string]graphNodeSpec
+	edgeStyles       map[int]styleClass
 	styleClasses     *map[string]styleClass
+	edgeIndex        int
 	boxBorderPadding int
 	graphDirection   string
 	graphBoxStyle    string
@@ -69,6 +71,7 @@ type textEdge struct {
 	parent       textNode
 	child        textNode
 	label        string
+	index        int
 	lineStyle    graphEdgeLineStyle
 	lineStyleSet bool
 	hasArrowHead bool
@@ -193,15 +196,27 @@ func nodeShapeSyntaxes() []nodeShapeSyntax {
 
 func parseStyleClass(matchedLine []string) styleClass {
 	className := matchedLine[0]
-	styles := matchedLine[1]
-	// Styles are comma separated and key-values are separated by colon
-	// Example: fill:#f9f,stroke:#333,stroke-width:4px
+	return styleClass{className, parseStyleMap(matchedLine[1])}
+}
+
+func parseStyleMap(styles string) map[string]string {
 	styleMap := make(map[string]string)
 	for _, style := range strings.Split(styles, ",") {
-		kv := strings.Split(style, ":")
-		styleMap[kv[0]] = kv[1]
+		style = strings.TrimSpace(strings.TrimSuffix(style, ";"))
+		if style == "" {
+			continue
+		}
+		kv := strings.SplitN(style, ":", 2)
+		if len(kv) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(kv[0])
+		value := strings.TrimSpace(strings.TrimSuffix(kv[1], ";"))
+		if key != "" && value != "" {
+			styleMap[key] = value
+		}
 	}
-	return styleClass{className, styleMap}
+	return styleMap
 }
 
 func setEdgeWithLabel(lhs, rhs []textNode, label string, lineStyle graphEdgeLineStyle, hasArrowHead bool, gp *graphProperties) []textNode {
@@ -212,10 +227,12 @@ func setEdgeWithLabel(lhs, rhs []textNode, label string, lineStyle graphEdgeLine
 				parent:       l,
 				child:        r,
 				label:        label,
+				index:        gp.edgeIndex,
 				lineStyle:    lineStyle,
 				lineStyleSet: lineStyle != graphEdgeLineStyleLight,
 				hasArrowHead: hasArrowHead,
 			}, gp.data, gp.nodeSpecs)
+			gp.edgeIndex++
 		}
 	}
 	return rhs
@@ -377,10 +394,39 @@ func (gp *graphProperties) parseString(line string) ([]textNode, error) {
 			},
 		},
 		{
-			regex: regexp.MustCompile(`^classDef\s+(.+)\s+(.+)$`),
+			regex: regexp.MustCompile(`^classDef\s+(\S+)\s+(.+)$`),
 			handler: func(match []string) ([]textNode, error) {
 				s := parseStyleClass(match)
 				(*gp.styleClasses)[s.name] = s
+				return []textNode{}, nil
+			},
+		},
+		{
+			regex: regexp.MustCompile(`^class\s+(.+)\s+(\S+)$`),
+			handler: func(match []string) ([]textNode, error) {
+				for _, nodeName := range strings.Split(match[0], ",") {
+					nodeName = strings.TrimSpace(nodeName)
+					if nodeName == "" {
+						continue
+					}
+					spec := gp.nodeSpecs[nodeName]
+					spec.styleClass = match[1]
+					gp.nodeSpecs[nodeName] = spec
+				}
+				return []textNode{}, nil
+			},
+		},
+		{
+			regex: regexp.MustCompile(`^linkStyle\s+(\d+)\s+(.+)$`),
+			handler: func(match []string) ([]textNode, error) {
+				index, err := strconv.Atoi(match[0])
+				if err != nil {
+					return []textNode{}, err
+				}
+				gp.edgeStyles[index] = styleClass{
+					name:   fmt.Sprintf("linkStyle-%d", index),
+					styles: parseStyleMap(match[1]),
+				}
 				return []textNode{}, nil
 			},
 		},
@@ -444,6 +490,7 @@ func mermaidFileToMap(mermaid, styleType string) (*graphProperties, error) {
 	properties := graphProperties{
 		data:             data,
 		nodeSpecs:        make(map[string]graphNodeSpec),
+		edgeStyles:       make(map[int]styleClass),
 		styleClasses:     &styleClasses,
 		boxBorderPadding: boxBorderPadding,
 		graphDirection:   "",

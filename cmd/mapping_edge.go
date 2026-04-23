@@ -10,11 +10,14 @@ type edge struct {
 	from         *node
 	to           *node
 	text         string
+	styleClass   styleClass
 	lineStyle    graphEdgeLineStyle
 	lineStyleSet bool
 	hasArrowHead bool
 	path         []gridCoord
 	labelLine    []gridCoord
+	colorCoords  []drawingCoord
+	labelCoords  []drawingCoord
 	startDir     direction
 	endDir       direction
 }

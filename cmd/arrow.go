@@ -115,6 +115,7 @@ func (g *graph) drawArrow(from gridCoord, to gridCoord, e *edge) (*drawing, *dra
 	dBoxStart := g.drawBoxStart(e, linesDrawn[0])
 	dArrowHead := g.drawArrowHead(e, linesDrawn[len(linesDrawn)-1], lineDirs[len(lineDirs)-1])
 	dCorners := g.drawCorners(e)
+	e.colorCoords = nonSpaceDrawingCoords(dPath, dBoxStart, dArrowHead, dCorners)
 	return dPath, dBoxStart, dArrowHead, dCorners, dLabel
 }
 
@@ -245,11 +246,11 @@ func (g *graph) drawArrowLabel(e *edge) *drawing {
 	}
 
 	log.Debugf("Drawing text '%s' on gridline %v", e.text, e.labelLine)
-	d.drawTextOnLine(g.lineToDrawing(e.labelLine), e.text)
+	e.labelCoords = d.drawTextOnLine(g.lineToDrawing(e.labelLine), e.text)
 	return d
 }
 
-func (d *drawing) drawTextOnLine(line []drawingCoord, label string) {
+func (d *drawing) drawTextOnLine(line []drawingCoord, label string) []drawingCoord {
 	// Write text in middle of the line
 	//  123456789
 	// |---------|
@@ -273,5 +274,5 @@ func (d *drawing) drawTextOnLine(line []drawingCoord, label string) {
 	middleX := minX + (maxX-minX)/2
 	middleY := minY + (maxY-minY)/2
 	startLabelCoord := drawingCoord{x: middleX - len(label)/2, y: middleY}
-	d.drawText(startLabelCoord, label)
+	return d.drawText(startLabelCoord, label)
 }

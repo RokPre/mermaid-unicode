@@ -262,6 +262,26 @@ func TestRenderGraphUsesConfiguredSubgraphFrameStyle(t *testing.T) {
 	}
 }
 
+func TestRenderGraphAppliesNodeAndEdgeColors(t *testing.T) {
+	config := diagram.NewTestConfig(false, "html")
+	output, err := RenderDiagram("graph LR\nA[Start]:::warning -->|go| B[Done]\nclassDef warning stroke:#ff0000,color:#00ff00,fill:#111111;\nlinkStyle 0 stroke:#0000ff,color:#ff00ff;", config)
+	if err != nil {
+		t.Fatalf("RenderDiagram() error = %v", err)
+	}
+
+	for _, want := range []string{
+		"color: #ff0000",
+		"color: #00ff00",
+		"background-color: #111111",
+		"color: #0000ff",
+		"color: #ff00ff",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("expected colored output to contain %q\noutput:\n%s", want, output)
+		}
+	}
+}
+
 func assertUniformDisplayWidth(t *testing.T, output string) {
 	t.Helper()
 
