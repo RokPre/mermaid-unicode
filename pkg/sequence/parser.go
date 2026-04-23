@@ -30,6 +30,15 @@ var (
 	// activationRegex matches activate/deactivate directives.
 	activationRegex = regexp.MustCompile(`^\s*(activate|deactivate)\s+(?:"([^"]+)"|(\S+))\s*$`)
 
+	// fragmentStartRegex matches Mermaid sequence fragment starts such as loop, alt, opt, and par.
+	fragmentStartRegex = regexp.MustCompile(`^\s*(loop|alt|opt|par|critical|break)(?:\s+(.*))?$`)
+
+	// fragmentBranchRegex matches branch separators inside fragments.
+	fragmentBranchRegex = regexp.MustCompile(`^\s*(else|and)(?:\s+(.*))?$`)
+
+	// fragmentEndRegex matches a fragment end marker.
+	fragmentEndRegex = regexp.MustCompile(`^\s*end\s*$`)
+
 	// autonumberRegex matches the autonumber directive
 	autonumberRegex = regexp.MustCompile(`^\s*autonumber\s*$`)
 )
@@ -40,6 +49,7 @@ type SequenceDiagram struct {
 	Messages     []*Message
 	Notes        []*Note
 	Activations  []*Activation
+	Fragments    []*Fragment
 	Items        []*SequenceItem
 	Autonumber   bool
 }
@@ -64,6 +74,7 @@ type SequenceItem struct {
 	Message    *Message
 	Note       *Note
 	Activation *Activation
+	Fragment   *Fragment
 }
 
 type NotePosition string
@@ -83,6 +94,12 @@ type Note struct {
 type Activation struct {
 	Participant *Participant
 	Active      bool
+}
+
+type Fragment struct {
+	Kind  string
+	Label string
+	End   bool
 }
 
 type ArrowType int
@@ -137,10 +154,12 @@ func Parse(input string) (*SequenceDiagram, error) {
 		Messages:     []*Message{},
 		Notes:        []*Note{},
 		Activations:  []*Activation{},
+		Fragments:    []*Fragment{},
 		Items:        []*SequenceItem{},
 		Autonumber:   false,
 	}
 	participantMap := make(map[string]*Participant)
+	fragmentDepth := 0
 
 	for i, line := range lines {
 		trimmed := strings.TrimSpace(line)
@@ -172,6 +191,19 @@ func Parse(input string) (*SequenceDiagram, error) {
 			continue
 		}
 
+		if matched, delta, err := sd.parseFragment(trimmed); err != nil {
+			return nil, fmt.Errorf("line %d: %w", i+2, err)
+		} else if matched {
+			if delta == 0 && fragmentDepth == 0 {
+				return nil, fmt.Errorf("line %d: fragment branch outside fragment", i+2)
+			}
+			if delta < 0 && fragmentDepth == 0 {
+				return nil, fmt.Errorf("line %d: fragment end without matching start", i+2)
+			}
+			fragmentDepth += delta
+			continue
+		}
+
 		if matched, err := sd.parseMessage(trimmed, participantMap); err != nil {
 			return nil, fmt.Errorf("line %d: %w", i+2, err)
 		} else if matched {
@@ -183,6 +215,9 @@ func Parse(input string) (*SequenceDiagram, error) {
 
 	if len(sd.Participants) == 0 {
 		return nil, fmt.Errorf("no participants found")
+	}
+	if fragmentDepth != 0 {
+		return nil, fmt.Errorf("unterminated sequence fragment")
 	}
 
 	return sd, nil
@@ -280,6 +315,37 @@ func splitNoteParticipants(raw string) []string {
 		}
 	}
 	return ids
+}
+
+func (sd *SequenceDiagram) parseFragment(line string) (bool, int, error) {
+	if match := fragmentStartRegex.FindStringSubmatch(line); match != nil {
+		fragment := &Fragment{
+			Kind:  strings.ToLower(match[1]),
+			Label: strings.TrimSpace(match[2]),
+		}
+		sd.Fragments = append(sd.Fragments, fragment)
+		sd.Items = append(sd.Items, &SequenceItem{Fragment: fragment})
+		return true, 1, nil
+	}
+
+	if match := fragmentBranchRegex.FindStringSubmatch(line); match != nil {
+		fragment := &Fragment{
+			Kind:  strings.ToLower(match[1]),
+			Label: strings.TrimSpace(match[2]),
+		}
+		sd.Fragments = append(sd.Fragments, fragment)
+		sd.Items = append(sd.Items, &SequenceItem{Fragment: fragment})
+		return true, 0, nil
+	}
+
+	if fragmentEndRegex.MatchString(line) {
+		fragment := &Fragment{Kind: "end", End: true}
+		sd.Fragments = append(sd.Fragments, fragment)
+		sd.Items = append(sd.Items, &SequenceItem{Fragment: fragment})
+		return true, -1, nil
+	}
+
+	return false, 0, nil
 }
 
 func (sd *SequenceDiagram) parseMessage(line string, participants map[string]*Participant) (bool, error) {

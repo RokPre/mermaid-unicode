@@ -143,6 +143,8 @@ func Render(sd *SequenceDiagram, config *diagram.Config) (string, error) {
 				lines = append(lines, buildLifelineWithActivation(layout, chars, active))
 				delete(active, item.Activation.Participant.Index)
 			}
+		case item.Fragment != nil:
+			lines = append(lines, renderFragment(item.Fragment, layout, chars, active))
 		}
 	}
 
@@ -264,6 +266,55 @@ func placeOverlay(base string, left int, overlay string) string {
 	for i, r := range []rune(overlay) {
 		line[left+i] = r
 	}
+	return strings.TrimRight(string(line), " ")
+}
+
+func renderFragment(fragment *Fragment, layout *diagramLayout, chars BoxChars, active map[int]bool) string {
+	line := []rune(buildLifelineWithActivation(layout, chars, active))
+	if len(line) < layout.totalWidth+1 {
+		padding := make([]rune, layout.totalWidth+1-len(line))
+		for i := range padding {
+			padding[i] = ' '
+		}
+		line = append(line, padding...)
+	}
+
+	label := fragment.Kind
+	if fragment.End {
+		label = "end"
+	} else if fragment.Label != "" {
+		label = fragment.Kind + " " + fragment.Label
+	}
+
+	left, right := 0, layout.totalWidth
+	for i := left; i <= right && i < len(line); i++ {
+		line[i] = chars.Horizontal
+	}
+
+	switch {
+	case fragment.End:
+		line[left] = chars.BottomLeft
+		line[right] = chars.BottomRight
+	case fragment.Kind == "else" || fragment.Kind == "and":
+		line[left] = chars.TeeRight
+		line[right] = chars.TeeLeft
+	default:
+		line[left] = chars.TopLeft
+		line[right] = chars.TopRight
+	}
+
+	if label != "" {
+		text := " " + label + " "
+		start := left + 2
+		for i, r := range []rune(text) {
+			pos := start + i
+			if pos >= right || pos >= len(line) {
+				break
+			}
+			line[pos] = r
+		}
+	}
+
 	return strings.TrimRight(string(line), " ")
 }
 

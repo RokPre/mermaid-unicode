@@ -309,6 +309,87 @@ B-->>-A: Done`
 	}
 }
 
+func TestSequenceFragments(t *testing.T) {
+	input := `sequenceDiagram
+participant A as Alice
+participant B as Bob
+loop Retry
+A->>B: Request
+alt Success
+B-->>A: OK
+else Failure
+B-->>A: Error
+end
+end`
+
+	d, err := Parse(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(d.Fragments) != 5 {
+		t.Fatalf("fragments = %d, want 5", len(d.Fragments))
+	}
+	if len(d.Items) != 8 {
+		t.Fatalf("items = %d, want 8", len(d.Items))
+	}
+	if d.Fragments[0].Kind != "loop" || d.Fragments[0].Label != "Retry" {
+		t.Fatalf("first fragment = %#v, want loop Retry", d.Fragments[0])
+	}
+	if d.Fragments[2].Kind != "else" || d.Fragments[2].Label != "Failure" {
+		t.Fatalf("branch fragment = %#v, want else Failure", d.Fragments[2])
+	}
+
+	output, err := Render(d, diagram.DefaultConfig())
+	if err != nil {
+		t.Fatalf("render error: %v", err)
+	}
+	for _, want := range []string{"loop Retry", "alt Success", "else Failure", "Request", "OK", "Error", "┌", "└"} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("output missing %q\noutput:\n%s", want, output)
+		}
+	}
+}
+
+func TestSequenceFragmentValidation(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		wantErr string
+	}{
+		{
+			name: "unterminated fragment",
+			input: `sequenceDiagram
+A->>B: Start
+loop Retry
+B-->>A: Again`,
+			wantErr: "unterminated sequence fragment",
+		},
+		{
+			name: "unexpected end",
+			input: `sequenceDiagram
+A->>B: Start
+end`,
+			wantErr: "fragment end without matching start",
+		},
+		{
+			name: "unexpected branch",
+			input: `sequenceDiagram
+A->>B: Start
+else Other`,
+			wantErr: "fragment branch outside fragment",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := Parse(tt.input)
+			if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("Parse() error = %v, want containing %q", err, tt.wantErr)
+			}
+		})
+	}
+}
+
 func TestActivationRegex(t *testing.T) {
 	tests := []struct {
 		input      string

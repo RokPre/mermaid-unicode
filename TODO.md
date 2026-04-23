@@ -6,7 +6,6 @@ No current task selected.
 
 ## Active TODOs
 
-- [ ] 1 Sequence expand-sequence-core
 - [ ] 2 Shared extract-style-and-color-model
 - [ ] 2 ER add-er-diagram-renderer
 - [ ] 2 Class add-class-diagram-renderer
@@ -29,6 +28,8 @@ No current task selected.
 - [x] 1 Sequence add-sequence-notes
 - [x] 1 Sequence add-sequence-activation-directives
 - [x] 1 Sequence add-sequence-activation-shorthand
+- [x] 1 Sequence expand-sequence-core
+- [x] 1 Sequence add-sequence-fragment-frames
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 1 Flowchart add-open-solid-connectors
@@ -327,7 +328,7 @@ This completes one more connector slice under `audit-flowchart-parity`; bidirect
 
 Priority: 1
 Area: Sequence
-Status: pending
+Status: done
 Depends on: add-diagram-registry
 
 Goal:
@@ -352,7 +353,36 @@ Acceptance criteria:
 - `go test ./...` passes.
 
 Notes:
-Browser-specific links/actions should remain out of scope.
+Completed as a focused terminal-friendly sequence core: actor declarations, notes, activation directives, activation shorthand, and loop/alt/else/opt/par-style fragment frames are supported. Browser-specific links/actions remain out of scope.
+
+### add-sequence-fragment-frames
+
+Priority: 1
+Area: Sequence
+Status: done
+Depends on: add-sequence-activation-shorthand
+
+Goal:
+Support common Mermaid sequence fragment markers as ordered, lane-spanning terminal frame separators.
+
+Context:
+Sequence parsing already preserves ordered messages, notes, and activations. Mermaid fragments such as `loop`, `alt`, `else`, `opt`, and `par` need to fit into the same ordered item stream so rendered output follows source order.
+
+Expected changes:
+- Parse fragment starts including `loop`, `alt`, `opt`, and `par`.
+- Parse branch separators such as `else` and `and`.
+- Parse matching `end` markers and validate unmatched or unterminated fragments.
+- Render fragment markers as deterministic Unicode and ASCII full-width separators across participant lanes.
+- Add parser and render tests for valid and invalid fragments.
+
+Acceptance criteria:
+- Fragment labels appear in rendered sequence output.
+- Invalid fragment nesting reports clear errors.
+- Existing sequence message, note, and activation behavior still works.
+- `go test ./...` passes.
+
+Notes:
+This uses terminal-stable separator frames rather than trying to draw nested browser-style fragment rectangles around arbitrary row spans.
 
 ### extract-style-and-color-model
 

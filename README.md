@@ -334,6 +334,7 @@ Explicit Mermaid syntax still wins over these defaults, so `A[[Text]]` stays dou
 ### Sequence Diagrams
 
 Sequence diagrams are also fully supported! They visualize message flows between participants over time.
+The renderer supports participant and actor declarations, notes, activation directives and shorthand, and Mermaid fragment frames such as `loop`, `alt`, `else`, `opt`, and `par`.
 
 ```bash
 # Simple sequence diagram
@@ -660,11 +661,12 @@ Note that with `--coords` enabled, the grid-coords shown show the starting locat
 - [x] Notes (`Note left of Alice`, `Note right of Alice`, `Note over Alice,Bob`)
 - [x] Activation directives (`activate Alice`, `deactivate Alice`)
 - [x] Activation shorthand (`A->>+B`, `B-->>-A`)
+- [x] Fragment frames (`loop`, `alt`, `else`, `opt`, `par`)
 - [x] Unicode support (emojis, CJK characters, etc.)
 - [x] Both ASCII and Unicode rendering modes
 - [ ] Activation boxes
 - [x] Notes (`Note left of Alice: text`)
-- [ ] Loops, alt, opt blocks
+- [x] Loops, alt, opt, and par blocks
 
 ## TODOs
 
@@ -691,8 +693,8 @@ The baseline components for Mermaid work, but there are a lot of things that are
 ### Sequence Diagram Improvements
 
 - [x] Activation boxes (activate/deactivate)
-- [ ] Notes (`Note left of Alice: text`)
-- [ ] Loops, alt, opt, and par blocks
+- [x] Notes (`Note left of Alice: text`)
+- [x] Loops, alt, opt, and par blocks
 
 ### General
 
