@@ -24,6 +24,9 @@ var (
 	// messageRegex matches messages: [From]->>[To]: [Label]
 	messageRegex = regexp.MustCompile(`^\s*(?:"([^"]+)"|([^\s\->]+))\s*(-->>|->>)\s*(?:"([^"]+)"|([^\s\->]+))\s*:\s*(.*)$`)
 
+	// noteRegex matches notes: Note left of A: text, Note right of A: text, Note over A,B: text
+	noteRegex = regexp.MustCompile(`^\s*Note\s+(left of|right of|over)\s+(.+?)\s*:\s*(.*)$`)
+
 	// autonumberRegex matches the autonumber directive
 	autonumberRegex = regexp.MustCompile(`^\s*autonumber\s*$`)
 )
@@ -32,6 +35,8 @@ var (
 type SequenceDiagram struct {
 	Participants []*Participant
 	Messages     []*Message
+	Notes        []*Note
+	Items        []*SequenceItem
 	Autonumber   bool
 }
 
@@ -47,6 +52,25 @@ type Message struct {
 	Label     string
 	ArrowType ArrowType
 	Number    int // Message number when autonumber is enabled (0 means no number)
+}
+
+type SequenceItem struct {
+	Message *Message
+	Note    *Note
+}
+
+type NotePosition string
+
+const (
+	NoteLeftOf  NotePosition = "left of"
+	NoteRightOf NotePosition = "right of"
+	NoteOver    NotePosition = "over"
+)
+
+type Note struct {
+	Position     NotePosition
+	Participants []*Participant
+	Text         string
 }
 
 type ArrowType int
@@ -99,6 +123,8 @@ func Parse(input string) (*SequenceDiagram, error) {
 	sd := &SequenceDiagram{
 		Participants: []*Participant{},
 		Messages:     []*Message{},
+		Notes:        []*Note{},
+		Items:        []*SequenceItem{},
 		Autonumber:   false,
 	}
 	participantMap := make(map[string]*Participant)
@@ -116,6 +142,12 @@ func Parse(input string) (*SequenceDiagram, error) {
 		}
 
 		if matched, err := sd.parseParticipant(trimmed, participantMap); err != nil {
+			return nil, fmt.Errorf("line %d: %w", i+2, err)
+		} else if matched {
+			continue
+		}
+
+		if matched, err := sd.parseNote(trimmed, participantMap); err != nil {
 			return nil, fmt.Errorf("line %d: %w", i+2, err)
 		} else if matched {
 			continue
@@ -170,6 +202,48 @@ func (sd *SequenceDiagram) parseParticipant(line string, participants map[string
 	return true, nil
 }
 
+func (sd *SequenceDiagram) parseNote(line string, participants map[string]*Participant) (bool, error) {
+	match := noteRegex.FindStringSubmatch(line)
+	if match == nil {
+		return false, nil
+	}
+
+	position := NotePosition(match[1])
+	participantIDs := splitNoteParticipants(match[2])
+	if len(participantIDs) == 0 {
+		return true, fmt.Errorf("note must reference at least one participant")
+	}
+	if position != NoteOver && len(participantIDs) > 1 {
+		return true, fmt.Errorf("note %s supports exactly one participant", position)
+	}
+
+	noteParticipants := make([]*Participant, 0, len(participantIDs))
+	for _, id := range participantIDs {
+		noteParticipants = append(noteParticipants, sd.getParticipant(id, participants))
+	}
+
+	note := &Note{
+		Position:     position,
+		Participants: noteParticipants,
+		Text:         strings.TrimSpace(match[3]),
+	}
+	sd.Notes = append(sd.Notes, note)
+	sd.Items = append(sd.Items, &SequenceItem{Note: note})
+	return true, nil
+}
+
+func splitNoteParticipants(raw string) []string {
+	ids := []string{}
+	for _, part := range strings.Split(raw, ",") {
+		id := strings.TrimSpace(part)
+		id = strings.Trim(id, `"`)
+		if id != "" {
+			ids = append(ids, id)
+		}
+	}
+	return ids
+}
+
 func (sd *SequenceDiagram) parseMessage(line string, participants map[string]*Participant) (bool, error) {
 	match := messageRegex.FindStringSubmatch(line)
 	if match == nil {
@@ -211,6 +285,7 @@ func (sd *SequenceDiagram) parseMessage(line string, participants map[string]*Pa
 		Number:    msgNumber,
 	}
 	sd.Messages = append(sd.Messages, msg)
+	sd.Items = append(sd.Items, &SequenceItem{Message: msg})
 	return true, nil
 }
 

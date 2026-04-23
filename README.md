@@ -657,10 +657,11 @@ Note that with `--coords` enabled, the grid-coords shown show the starting locat
 - [x] Participant declarations (`participant Alice`)
 - [x] Participant aliases (`participant A as Alice`)
 - [x] Actor declarations and aliases (`actor A as Alice`)
+- [x] Notes (`Note left of Alice`, `Note right of Alice`, `Note over Alice,Bob`)
 - [x] Unicode support (emojis, CJK characters, etc.)
 - [x] Both ASCII and Unicode rendering modes
 - [ ] Activation boxes
-- [ ] Notes (`Note left of Alice: text`)
+- [x] Notes (`Note left of Alice: text`)
 - [ ] Loops, alt, opt blocks
 
 ## TODOs

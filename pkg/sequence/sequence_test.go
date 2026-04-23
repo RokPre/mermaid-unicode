@@ -27,6 +27,7 @@ func TestParse(t *testing.T) {
 		{"self message", "sequenceDiagram\nA->>A: Self", 1, 1, ""},
 		{"multiple messages", "sequenceDiagram\nA->>B: 1\nB->>C: 2\nC-->>A: 3", 3, 3, ""},
 		{"with comments", "sequenceDiagram\n%% Comment\nA->>B: Hi %% inline comment", 2, 1, ""},
+		{"with note", "sequenceDiagram\nA->>B: Hi\nNote over A,B: Shared context", 2, 1, ""},
 	}
 
 	for _, tt := range tests {
@@ -191,6 +192,70 @@ func TestMessageRegex(t *testing.T) {
 		if gotFrom != tt.wantFrom || gotArrow != tt.wantArrow || gotTo != tt.wantTo || gotLabel != tt.wantLabel {
 			t.Errorf("messageRegex(%q) = (%q, %q, %q, %q), want (%q, %q, %q, %q)",
 				tt.input, gotFrom, gotArrow, gotTo, gotLabel, tt.wantFrom, tt.wantArrow, tt.wantTo, tt.wantLabel)
+		}
+	}
+}
+
+func TestSequenceNotes(t *testing.T) {
+	input := `sequenceDiagram
+participant A as Alice
+participant B as Bob
+Note left of A: Local note
+A->>B: Hello
+Note over A,B: Shared context
+Note right of B: Remote note`
+
+	d, err := Parse(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(d.Notes) != 3 {
+		t.Fatalf("notes = %d, want 3", len(d.Notes))
+	}
+	if len(d.Items) != 4 {
+		t.Fatalf("items = %d, want 4", len(d.Items))
+	}
+	if d.Notes[0].Position != NoteLeftOf || d.Notes[0].Text != "Local note" {
+		t.Fatalf("first note = %#v, want left local note", d.Notes[0])
+	}
+	if len(d.Notes[1].Participants) != 2 || d.Notes[1].Position != NoteOver {
+		t.Fatalf("second note = %#v, want note over two participants", d.Notes[1])
+	}
+	if d.Notes[2].Position != NoteRightOf || d.Notes[2].Participants[0].ID != "B" {
+		t.Fatalf("third note = %#v, want right of B", d.Notes[2])
+	}
+
+	output, err := Render(d, diagram.DefaultConfig())
+	if err != nil {
+		t.Fatalf("render error: %v", err)
+	}
+	for _, want := range []string{"Local note", "Hello", "Shared context", "Remote note"} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("output missing %q\noutput:\n%s", want, output)
+		}
+	}
+}
+
+func TestNoteRegex(t *testing.T) {
+	tests := []struct {
+		input        string
+		wantPos      string
+		wantTargets  string
+		wantNoteText string
+	}{
+		{"Note left of A: Local note", "left of", "A", "Local note"},
+		{"Note right of A: Remote note", "right of", "A", "Remote note"},
+		{"Note over A,B: Shared context", "over", "A,B", "Shared context"},
+	}
+
+	for _, tt := range tests {
+		match := noteRegex.FindStringSubmatch(tt.input)
+		if match == nil {
+			t.Fatalf("noteRegex failed to match %q", tt.input)
+		}
+		if match[1] != tt.wantPos || match[2] != tt.wantTargets || match[3] != tt.wantNoteText {
+			t.Fatalf("noteRegex(%q) = (%q, %q, %q), want (%q, %q, %q)",
+				tt.input, match[1], match[2], match[3], tt.wantPos, tt.wantTargets, tt.wantNoteText)
 		}
 	}
 }

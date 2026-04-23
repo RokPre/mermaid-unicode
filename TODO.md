@@ -26,6 +26,7 @@ No current task selected.
 - [x] 0 Architecture add-diagram-registry
 - [x] 1 Flowchart audit-flowchart-parity
 - [x] 1 Sequence add-sequence-actor-declarations
+- [x] 1 Sequence add-sequence-notes
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 1 Flowchart add-open-solid-connectors
@@ -149,6 +150,35 @@ Acceptance criteria:
 
 Notes:
 This is a first bounded slice of `expand-sequence-core`; visual actor-specific glyphs can be a later renderer enhancement if needed.
+
+### add-sequence-notes
+
+Priority: 1
+Area: Sequence
+Status: done
+Depends on: add-sequence-actor-declarations
+
+Goal:
+Support Mermaid sequence notes for `Note left of`, `Note right of`, and `Note over`.
+
+Context:
+Mermaid sequence diagrams commonly use notes to annotate participant lanes. The renderer previously only had message events, so notes needed to be represented as ordered sequence items to preserve source order with messages.
+
+Expected changes:
+- Parse `Note left of A: text`.
+- Parse `Note right of A: text`.
+- Parse `Note over A,B: text`.
+- Render notes as terminal boxes aligned to the referenced participant or participant span.
+- Preserve message order around notes.
+- Add parser and render tests.
+
+Acceptance criteria:
+- Notes are stored in parse order with messages.
+- Rendered output includes note text and normal messages in source order.
+- `go test ./...` passes.
+
+Notes:
+Notes currently render as simple boxes using the existing sequence charset. They do not yet support multiline note text.
 
 ### add-expanded-shape-syntax
 

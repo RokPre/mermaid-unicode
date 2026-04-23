@@ -112,15 +112,26 @@ func Render(sd *SequenceDiagram, config *diagram.Config) (string, error) {
 			string(chars.BottomRight)
 	}))
 
-	for _, msg := range sd.Messages {
+	items := sd.Items
+	if len(items) == 0 {
+		items = make([]*SequenceItem, 0, len(sd.Messages))
+		for _, msg := range sd.Messages {
+			items = append(items, &SequenceItem{Message: msg})
+		}
+	}
+
+	for _, item := range items {
 		for i := 0; i < layout.messageSpacing; i++ {
 			lines = append(lines, buildLifeline(layout, chars))
 		}
 
-		if msg.From == msg.To {
-			lines = append(lines, renderSelfMessage(msg, layout, chars)...)
-		} else {
-			lines = append(lines, renderMessage(msg, layout, chars)...)
+		switch {
+		case item.Message != nil && item.Message.From == item.Message.To:
+			lines = append(lines, renderSelfMessage(item.Message, layout, chars)...)
+		case item.Message != nil:
+			lines = append(lines, renderMessage(item.Message, layout, chars)...)
+		case item.Note != nil:
+			lines = append(lines, renderNote(item.Note, layout, chars)...)
 		}
 	}
 
@@ -152,6 +163,79 @@ func buildLifeline(layout *diagramLayout, chars BoxChars) string {
 		if c < len(line) {
 			line[c] = chars.Vertical
 		}
+	}
+	return strings.TrimRight(string(line), " ")
+}
+
+func renderNote(note *Note, layout *diagramLayout, chars BoxChars) []string {
+	left, width := noteBounds(note, layout)
+	minWidth := runewidth.StringWidth(note.Text) + boxBorderWidth + 2
+	if width < minWidth {
+		width = minWidth
+	}
+
+	top := string(chars.TopLeft) + strings.Repeat(string(chars.Horizontal), width-2) + string(chars.TopRight)
+	textWidth := runewidth.StringWidth(note.Text)
+	leftPad := (width - boxBorderWidth - textWidth) / 2
+	rightPad := width - boxBorderWidth - textWidth - leftPad
+	middle := string(chars.Vertical) + strings.Repeat(" ", leftPad) + note.Text + strings.Repeat(" ", rightPad) + string(chars.Vertical)
+	bottom := string(chars.BottomLeft) + strings.Repeat(string(chars.Horizontal), width-2) + string(chars.BottomRight)
+
+	return []string{
+		placeOverlay(buildLifeline(layout, chars), left, top),
+		placeOverlay(buildLifeline(layout, chars), left, middle),
+		placeOverlay(buildLifeline(layout, chars), left, bottom),
+	}
+}
+
+func noteBounds(note *Note, layout *diagramLayout) (int, int) {
+	firstCenter := layout.participantCenters[note.Participants[0].Index]
+	lastCenter := firstCenter
+	for _, p := range note.Participants[1:] {
+		center := layout.participantCenters[p.Index]
+		if center < firstCenter {
+			firstCenter = center
+		}
+		if center > lastCenter {
+			lastCenter = center
+		}
+	}
+
+	textWidth := runewidth.StringWidth(note.Text) + boxBorderWidth + 2
+	switch note.Position {
+	case NoteLeftOf:
+		left := firstCenter - textWidth
+		if left < 0 {
+			left = 0
+		}
+		return left, textWidth
+	case NoteRightOf:
+		return firstCenter + 1, textWidth
+	default:
+		left := firstCenter - 1
+		if left < 0 {
+			left = 0
+		}
+		width := lastCenter - left + 2
+		if width < textWidth {
+			width = textWidth
+		}
+		return left, width
+	}
+}
+
+func placeOverlay(base string, left int, overlay string) string {
+	line := []rune(base)
+	width := left + len([]rune(overlay))
+	if len(line) < width {
+		padding := make([]rune, width-len(line))
+		for i := range padding {
+			padding[i] = ' '
+		}
+		line = append(line, padding...)
+	}
+	for i, r := range []rune(overlay) {
+		line[left+i] = r
 	}
 	return strings.TrimRight(string(line), " ")
 }
