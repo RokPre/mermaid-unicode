@@ -27,6 +27,9 @@ var (
 	// noteRegex matches notes: Note left of A: text, Note right of A: text, Note over A,B: text
 	noteRegex = regexp.MustCompile(`^\s*Note\s+(left of|right of|over)\s+(.+?)\s*:\s*(.*)$`)
 
+	// activationRegex matches activate/deactivate directives.
+	activationRegex = regexp.MustCompile(`^\s*(activate|deactivate)\s+(?:"([^"]+)"|(\S+))\s*$`)
+
 	// autonumberRegex matches the autonumber directive
 	autonumberRegex = regexp.MustCompile(`^\s*autonumber\s*$`)
 )
@@ -36,6 +39,7 @@ type SequenceDiagram struct {
 	Participants []*Participant
 	Messages     []*Message
 	Notes        []*Note
+	Activations  []*Activation
 	Items        []*SequenceItem
 	Autonumber   bool
 }
@@ -55,8 +59,9 @@ type Message struct {
 }
 
 type SequenceItem struct {
-	Message *Message
-	Note    *Note
+	Message    *Message
+	Note       *Note
+	Activation *Activation
 }
 
 type NotePosition string
@@ -71,6 +76,11 @@ type Note struct {
 	Position     NotePosition
 	Participants []*Participant
 	Text         string
+}
+
+type Activation struct {
+	Participant *Participant
+	Active      bool
 }
 
 type ArrowType int
@@ -124,6 +134,7 @@ func Parse(input string) (*SequenceDiagram, error) {
 		Participants: []*Participant{},
 		Messages:     []*Message{},
 		Notes:        []*Note{},
+		Activations:  []*Activation{},
 		Items:        []*SequenceItem{},
 		Autonumber:   false,
 	}
@@ -142,6 +153,12 @@ func Parse(input string) (*SequenceDiagram, error) {
 		}
 
 		if matched, err := sd.parseParticipant(trimmed, participantMap); err != nil {
+			return nil, fmt.Errorf("line %d: %w", i+2, err)
+		} else if matched {
+			continue
+		}
+
+		if matched, err := sd.parseActivation(trimmed, participantMap); err != nil {
 			return nil, fmt.Errorf("line %d: %w", i+2, err)
 		} else if matched {
 			continue
@@ -199,6 +216,25 @@ func (sd *SequenceDiagram) parseParticipant(line string, participants map[string
 	}
 	sd.Participants = append(sd.Participants, p)
 	participants[id] = p
+	return true, nil
+}
+
+func (sd *SequenceDiagram) parseActivation(line string, participants map[string]*Participant) (bool, error) {
+	match := activationRegex.FindStringSubmatch(line)
+	if match == nil {
+		return false, nil
+	}
+
+	id := match[3]
+	if match[2] != "" {
+		id = match[2]
+	}
+	activation := &Activation{
+		Participant: sd.getParticipant(id, participants),
+		Active:      match[1] == "activate",
+	}
+	sd.Activations = append(sd.Activations, activation)
+	sd.Items = append(sd.Items, &SequenceItem{Activation: activation})
 	return true, nil
 }
 

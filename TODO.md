@@ -27,6 +27,7 @@ No current task selected.
 - [x] 1 Flowchart audit-flowchart-parity
 - [x] 1 Sequence add-sequence-actor-declarations
 - [x] 1 Sequence add-sequence-notes
+- [x] 1 Sequence add-sequence-activation-directives
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 1 Flowchart add-open-solid-connectors
@@ -179,6 +180,35 @@ Acceptance criteria:
 
 Notes:
 Notes currently render as simple boxes using the existing sequence charset. They do not yet support multiline note text.
+
+### add-sequence-activation-directives
+
+Priority: 1
+Area: Sequence
+Status: done
+Depends on: add-sequence-notes
+
+Goal:
+Support standalone Mermaid sequence activation directives.
+
+Context:
+Mermaid sequence diagrams can use `activate` and `deactivate` directives to show when a participant is active. The renderer already had lifelines, so this slice adds a visible active lifeline glyph without implementing message suffix shorthand such as `->>+`.
+
+Expected changes:
+- Parse `activate A`.
+- Parse `deactivate A`.
+- Preserve activation directives as ordered sequence items.
+- Render active participant lifelines with an activation glyph until deactivated.
+- Add parser and render tests.
+
+Acceptance criteria:
+- Activation directives create ordered activation items.
+- Rendered output visibly marks active lifeline segments.
+- Existing sequence messages and notes still render.
+- `go test ./...` passes.
+
+Notes:
+This does not yet support Mermaid's `+` and `-` message suffix shorthand.
 
 ### add-expanded-shape-syntax
 

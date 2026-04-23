@@ -120,22 +120,31 @@ func Render(sd *SequenceDiagram, config *diagram.Config) (string, error) {
 		}
 	}
 
+	active := map[int]bool{}
 	for _, item := range items {
 		for i := 0; i < layout.messageSpacing; i++ {
-			lines = append(lines, buildLifeline(layout, chars))
+			lines = append(lines, buildLifelineWithActivation(layout, chars, active))
 		}
 
 		switch {
 		case item.Message != nil && item.Message.From == item.Message.To:
-			lines = append(lines, renderSelfMessage(item.Message, layout, chars)...)
+			lines = append(lines, renderSelfMessage(item.Message, layout, chars, active)...)
 		case item.Message != nil:
-			lines = append(lines, renderMessage(item.Message, layout, chars)...)
+			lines = append(lines, renderMessage(item.Message, layout, chars, active)...)
 		case item.Note != nil:
-			lines = append(lines, renderNote(item.Note, layout, chars)...)
+			lines = append(lines, renderNote(item.Note, layout, chars, active)...)
+		case item.Activation != nil:
+			if item.Activation.Active {
+				active[item.Activation.Participant.Index] = true
+				lines = append(lines, buildLifelineWithActivation(layout, chars, active))
+			} else {
+				lines = append(lines, buildLifelineWithActivation(layout, chars, active))
+				delete(active, item.Activation.Participant.Index)
+			}
 		}
 	}
 
-	lines = append(lines, buildLifeline(layout, chars))
+	lines = append(lines, buildLifelineWithActivation(layout, chars, active))
 	return strings.Join(lines, "\n") + "\n", nil
 }
 
@@ -155,19 +164,26 @@ func buildLine(participants []*Participant, layout *diagramLayout, draw func(int
 }
 
 func buildLifeline(layout *diagramLayout, chars BoxChars) string {
+	return buildLifelineWithActivation(layout, chars, nil)
+}
+
+func buildLifelineWithActivation(layout *diagramLayout, chars BoxChars, active map[int]bool) string {
 	line := make([]rune, layout.totalWidth+1)
 	for i := range line {
 		line[i] = ' '
 	}
-	for _, c := range layout.participantCenters {
+	for i, c := range layout.participantCenters {
 		if c < len(line) {
 			line[c] = chars.Vertical
+			if active != nil && active[i] {
+				line[c] = chars.Activation
+			}
 		}
 	}
 	return strings.TrimRight(string(line), " ")
 }
 
-func renderNote(note *Note, layout *diagramLayout, chars BoxChars) []string {
+func renderNote(note *Note, layout *diagramLayout, chars BoxChars, active map[int]bool) []string {
 	left, width := noteBounds(note, layout)
 	minWidth := runewidth.StringWidth(note.Text) + boxBorderWidth + 2
 	if width < minWidth {
@@ -182,9 +198,9 @@ func renderNote(note *Note, layout *diagramLayout, chars BoxChars) []string {
 	bottom := string(chars.BottomLeft) + strings.Repeat(string(chars.Horizontal), width-2) + string(chars.BottomRight)
 
 	return []string{
-		placeOverlay(buildLifeline(layout, chars), left, top),
-		placeOverlay(buildLifeline(layout, chars), left, middle),
-		placeOverlay(buildLifeline(layout, chars), left, bottom),
+		placeOverlay(buildLifelineWithActivation(layout, chars, active), left, top),
+		placeOverlay(buildLifelineWithActivation(layout, chars, active), left, middle),
+		placeOverlay(buildLifelineWithActivation(layout, chars, active), left, bottom),
 	}
 }
 
@@ -240,7 +256,7 @@ func placeOverlay(base string, left int, overlay string) string {
 	return strings.TrimRight(string(line), " ")
 }
 
-func renderMessage(msg *Message, layout *diagramLayout, chars BoxChars) []string {
+func renderMessage(msg *Message, layout *diagramLayout, chars BoxChars, active map[int]bool) []string {
 	var lines []string
 	from, to := layout.participantCenters[msg.From.Index], layout.participantCenters[msg.To.Index]
 
@@ -253,7 +269,7 @@ func renderMessage(msg *Message, layout *diagramLayout, chars BoxChars) []string
 		start := min(from, to) + labelLeftMargin
 		labelWidth := runewidth.StringWidth(label)
 		w := max(layout.totalWidth, start+labelWidth) + labelBufferSpace
-		line := []rune(buildLifeline(layout, chars))
+		line := []rune(buildLifelineWithActivation(layout, chars, active))
 		if len(line) < w {
 			padding := make([]rune, w-len(line))
 			for k := range padding {
@@ -272,7 +288,7 @@ func renderMessage(msg *Message, layout *diagramLayout, chars BoxChars) []string
 		lines = append(lines, strings.TrimRight(string(line), " "))
 	}
 
-	line := []rune(buildLifeline(layout, chars))
+	line := []rune(buildLifelineWithActivation(layout, chars, active))
 	style := chars.SolidLine
 	if msg.ArrowType == DottedArrow {
 		style = chars.DottedLine
@@ -297,7 +313,7 @@ func renderMessage(msg *Message, layout *diagramLayout, chars BoxChars) []string
 	return lines
 }
 
-func renderSelfMessage(msg *Message, layout *diagramLayout, chars BoxChars) []string {
+func renderSelfMessage(msg *Message, layout *diagramLayout, chars BoxChars, active map[int]bool) []string {
 	var lines []string
 	center := layout.participantCenters[msg.From.Index]
 	width := layout.selfMessageWidth
@@ -321,7 +337,7 @@ func renderSelfMessage(msg *Message, layout *diagramLayout, chars BoxChars) []st
 	}
 
 	if label != "" {
-		line := ensureWidth(buildLifeline(layout, chars))
+		line := ensureWidth(buildLifelineWithActivation(layout, chars, active))
 		start := center + labelLeftMargin
 		labelWidth := runewidth.StringWidth(label)
 		needed := start + labelWidth + labelBufferSpace
@@ -342,7 +358,7 @@ func renderSelfMessage(msg *Message, layout *diagramLayout, chars BoxChars) []st
 		lines = append(lines, strings.TrimRight(string(line), " "))
 	}
 
-	l1 := ensureWidth(buildLifeline(layout, chars))
+	l1 := ensureWidth(buildLifelineWithActivation(layout, chars, active))
 	l1[center] = chars.TeeRight
 	for i := 1; i < width; i++ {
 		l1[center+i] = chars.Horizontal
@@ -350,11 +366,11 @@ func renderSelfMessage(msg *Message, layout *diagramLayout, chars BoxChars) []st
 	l1[center+width-1] = chars.SelfTopRight
 	lines = append(lines, strings.TrimRight(string(l1), " "))
 
-	l2 := ensureWidth(buildLifeline(layout, chars))
+	l2 := ensureWidth(buildLifelineWithActivation(layout, chars, active))
 	l2[center+width-1] = chars.Vertical
 	lines = append(lines, strings.TrimRight(string(l2), " "))
 
-	l3 := ensureWidth(buildLifeline(layout, chars))
+	l3 := ensureWidth(buildLifelineWithActivation(layout, chars, active))
 	l3[center] = chars.Vertical
 	l3[center+1] = chars.ArrowLeft
 	for i := 2; i < width-1; i++ {

@@ -658,6 +658,7 @@ Note that with `--coords` enabled, the grid-coords shown show the starting locat
 - [x] Participant aliases (`participant A as Alice`)
 - [x] Actor declarations and aliases (`actor A as Alice`)
 - [x] Notes (`Note left of Alice`, `Note right of Alice`, `Note over Alice,Bob`)
+- [x] Activation directives (`activate Alice`, `deactivate Alice`)
 - [x] Unicode support (emojis, CJK characters, etc.)
 - [x] Both ASCII and Unicode rendering modes
 - [ ] Activation boxes
@@ -688,7 +689,7 @@ The baseline components for Mermaid work, but there are a lot of things that are
 
 ### Sequence Diagram Improvements
 
-- [ ] Activation boxes (activate/deactivate)
+- [x] Activation boxes (activate/deactivate)
 - [ ] Notes (`Note left of Alice: text`)
 - [ ] Loops, alt, opt, and par blocks
 

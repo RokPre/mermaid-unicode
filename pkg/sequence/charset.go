@@ -16,6 +16,7 @@ type BoxChars struct {
 	ArrowLeft    rune
 	SolidLine    rune
 	DottedLine   rune
+	Activation   rune
 	SelfTopRight rune
 	SelfBottom   rune
 }
@@ -35,6 +36,7 @@ var ASCII = BoxChars{
 	ArrowLeft:    '<',
 	SolidLine:    '-',
 	DottedLine:   '.',
+	Activation:   '#',
 	SelfTopRight: '+',
 	SelfBottom:   '+',
 }
@@ -54,6 +56,7 @@ var Unicode = BoxChars{
 	ArrowLeft:    '◄',
 	SolidLine:    '─',
 	DottedLine:   '┈',
+	Activation:   '┃',
 	SelfTopRight: '┐',
 	SelfBottom:   '┘',
 }

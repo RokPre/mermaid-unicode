@@ -236,6 +236,70 @@ Note right of B: Remote note`
 	}
 }
 
+func TestSequenceActivations(t *testing.T) {
+	input := `sequenceDiagram
+participant A as Alice
+participant B as Bob
+activate B
+A->>B: Work
+deactivate B
+B-->>A: Done`
+
+	d, err := Parse(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(d.Activations) != 2 {
+		t.Fatalf("activations = %d, want 2", len(d.Activations))
+	}
+	if len(d.Items) != 4 {
+		t.Fatalf("items = %d, want 4", len(d.Items))
+	}
+	if !d.Activations[0].Active || d.Activations[0].Participant.ID != "B" {
+		t.Fatalf("first activation = %#v, want activate B", d.Activations[0])
+	}
+	if d.Activations[1].Active || d.Activations[1].Participant.ID != "B" {
+		t.Fatalf("second activation = %#v, want deactivate B", d.Activations[1])
+	}
+
+	output, err := Render(d, diagram.DefaultConfig())
+	if err != nil {
+		t.Fatalf("render error: %v", err)
+	}
+	for _, want := range []string{"Work", "Done", "┃"} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("output missing %q\noutput:\n%s", want, output)
+		}
+	}
+}
+
+func TestActivationRegex(t *testing.T) {
+	tests := []struct {
+		input      string
+		wantAction string
+		wantID     string
+	}{
+		{"activate Alice", "activate", "Alice"},
+		{"deactivate Alice", "deactivate", "Alice"},
+		{`activate "External User"`, "activate", "External User"},
+	}
+
+	for _, tt := range tests {
+		match := activationRegex.FindStringSubmatch(tt.input)
+		if match == nil {
+			t.Fatalf("activationRegex failed to match %q", tt.input)
+		}
+		gotID := match[3]
+		if match[2] != "" {
+			gotID = match[2]
+		}
+		if match[1] != tt.wantAction || gotID != tt.wantID {
+			t.Fatalf("activationRegex(%q) = action %q id %q, want action %q id %q",
+				tt.input, match[1], gotID, tt.wantAction, tt.wantID)
+		}
+	}
+}
+
 func TestNoteRegex(t *testing.T) {
 	tests := []struct {
 		input        string
