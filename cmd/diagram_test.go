@@ -84,6 +84,12 @@ Root
 2024 : Idea`,
 			want: "timeline",
 		},
+		{
+			name: "journey",
+			input: `journey
+Task: 3: Me`,
+			want: "journey",
+		},
 	}
 
 	for _, tt := range tests {
@@ -106,7 +112,6 @@ func TestDiagramFactoryRejectsKnownUnsupportedTypes(t *testing.T) {
 		wantType    string
 		wantMessage string
 	}{
-		{name: "journey", input: "journey\ntitle Flow", wantType: "journey"},
 		{name: "gantt", input: "gantt\ntitle Plan", wantType: "gantt"},
 		{name: "pie", input: "pie showData\ntitle Shares", wantType: "pie"},
 		{name: "quadrant", input: "quadrantChart\ntitle Risk", wantType: "quadrantChart"},

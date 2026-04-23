@@ -712,6 +712,13 @@ Note that with `--coords` enabled, the grid-coords shown show the starting locat
 - [x] Vertical (`TD`) and horizontal (`LR`) output
 - [x] ASCII and Unicode rendering modes
 
+### User Journeys ✅
+- [x] `journey` detection and rendering
+- [x] Sectioned task rows
+- [x] Score validation from 1 to 5
+- [x] Actor lists and proportional score bars
+- [x] ASCII and Unicode rendering modes
+
 ## TODOs
 
 The baseline components for Mermaid work, but there are a lot of things that are not supported yet. Here's a list of things that are not yet supported:

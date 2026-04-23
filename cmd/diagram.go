@@ -7,6 +7,7 @@ import (
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/classdiagram"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/diagram"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/er"
+	"github.com/AlexanderGrooff/mermaid-ascii/pkg/journey"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/mindmap"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/requirementdiagram"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/sequence"
@@ -90,6 +91,15 @@ var supportedDiagramRegistry = []diagramRegistration{
 		},
 	},
 	{
+		typeName: "journey",
+		detect: func(input, _ string) bool {
+			return journey.IsJourney(input)
+		},
+		create: func() diagram.Diagram {
+			return &JourneyDiagram{}
+		},
+	},
+	{
 		typeName: "er",
 		detect: func(input, _ string) bool {
 			return er.IsERDiagram(input)
@@ -101,7 +111,6 @@ var supportedDiagramRegistry = []diagramRegistration{
 }
 
 var unsupportedDiagramRegistry = []unsupportedDiagramRegistration{
-	{typeName: "journey", detect: keywordDetector("journey")},
 	{typeName: "gantt", detect: keywordDetector("gantt")},
 	{typeName: "pie", detect: keywordDetector("pie")},
 	{typeName: "quadrantChart", detect: keywordDetector("quadrantChart")},
@@ -353,6 +362,30 @@ func (td *TimelineDiagram) Render(config *diagram.Config) (string, error) {
 
 func (td *TimelineDiagram) Type() string {
 	return "timeline"
+}
+
+type JourneyDiagram struct {
+	parsed *journey.Diagram
+}
+
+func (jd *JourneyDiagram) Parse(input string) error {
+	parsed, err := journey.Parse(input)
+	if err != nil {
+		return err
+	}
+	jd.parsed = parsed
+	return nil
+}
+
+func (jd *JourneyDiagram) Render(config *diagram.Config) (string, error) {
+	if jd.parsed == nil {
+		return "", fmt.Errorf("journey not parsed: call Parse() before Render()")
+	}
+	return journey.Render(jd.parsed, config)
+}
+
+func (jd *JourneyDiagram) Type() string {
+	return "journey"
 }
 
 type GraphDiagram struct {

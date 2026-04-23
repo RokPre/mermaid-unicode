@@ -6,7 +6,6 @@ No current task selected.
 
 ## Active TODOs
 
-- [ ] 4 UserJourney add-user-journey-renderer
 - [ ] 4 Charts add-pie-and-quadrant-renderers
 - [ ] 5 Gantt add-gantt-timeline-renderer
 - [ ] 5 Gitgraph add-gitgraph-lane-renderer
@@ -30,6 +29,7 @@ No current task selected.
 - [x] 3 Requirement add-requirement-diagram-renderer
 - [x] 3 Mindmap add-mindmap-tree-renderer
 - [x] 4 Timeline add-timeline-renderer
+- [x] 4 UserJourney add-user-journey-renderer
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 1 Flowchart add-open-solid-connectors
@@ -589,7 +589,7 @@ Completed as a conservative source-order renderer for titles, sections, periods,
 
 Priority: 4
 Area: UserJourney
-Status: pending
+Status: done
 Depends on: add-diagram-registry
 
 Goal:
@@ -612,7 +612,7 @@ Acceptance criteria:
 - `go test ./...` passes.
 
 Notes:
-This renderer does not need graph layout.
+Completed as a sectioned terminal task table with score validation and proportional score bars. This renderer does not need graph layout.
 
 ### add-pie-and-quadrant-renderers
 
