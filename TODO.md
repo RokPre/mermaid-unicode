@@ -6,7 +6,6 @@ No current task selected.
 
 ## Active TODOs
 
-- [ ] 2 State add-state-diagram-renderer
 - [ ] 3 Requirement add-requirement-diagram-renderer
 - [ ] 3 Mindmap add-mindmap-tree-renderer
 - [ ] 4 Timeline add-timeline-renderer
@@ -30,6 +29,7 @@ No current task selected.
 - [x] 2 Shared extract-style-and-color-model
 - [x] 2 ER add-er-diagram-renderer
 - [x] 2 Class add-class-diagram-renderer
+- [x] 2 State add-state-diagram-renderer
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 1 Flowchart add-open-solid-connectors
@@ -473,7 +473,7 @@ Completed as a dedicated `pkg/classdiagram` renderer, so class parser changes do
 
 Priority: 2
 Area: State
-Status: pending
+Status: done
 Depends on: add-diagram-registry, extract-style-and-color-model
 
 Goal:
@@ -497,7 +497,7 @@ Acceptance criteria:
 - `go test ./...` passes.
 
 Notes:
-Nested composite layout can be iterative; avoid promising full depth parity immediately.
+Completed as a first-pass terminal state renderer with start/end markers, aliases, descriptions, transition labels, notes, choice/fork/join markers, and simple composite frames. Deep composite layout remains iterative future work.
 
 ### add-requirement-diagram-renderer
 

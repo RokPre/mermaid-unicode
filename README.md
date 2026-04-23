@@ -685,6 +685,14 @@ Note that with `--coords` enabled, the grid-coords shown show the starting locat
 - [x] Relationship labels and quoted cardinality strings
 - [x] ASCII and Unicode rendering modes
 
+### State Diagrams ✅
+- [x] `stateDiagram` and `stateDiagram-v2` detection and rendering
+- [x] State declarations, aliases, and descriptions
+- [x] Start/end markers (`[*]`)
+- [x] Transitions and transition labels
+- [x] First-pass choice, fork, join, notes, and composite state frames
+- [x] ASCII and Unicode rendering modes
+
 ## TODOs
 
 The baseline components for Mermaid work, but there are a lot of things that are not supported yet. Here's a list of things that are not yet supported:
