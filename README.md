@@ -676,6 +676,15 @@ Note that with `--coords` enabled, the grid-coords shown show the starting locat
 - [x] Cardinality markers such as `||`, `|o`, `o{`, `}o`, and `}|`
 - [x] ASCII and Unicode rendering modes
 
+### Class Diagrams ✅
+- [x] `classDiagram` detection and rendering
+- [x] Class declarations and labels (`class BankAccount["Bank Account"]`)
+- [x] Class member blocks and colon member declarations
+- [x] Attribute and operation compartments
+- [x] Core relationships (`<|--`, `*--`, `o--`, `-->`, `--`, `..>`, `..|>`, `..`)
+- [x] Relationship labels and quoted cardinality strings
+- [x] ASCII and Unicode rendering modes
+
 ## TODOs
 
 The baseline components for Mermaid work, but there are a lot of things that are not supported yet. Here's a list of things that are not yet supported:

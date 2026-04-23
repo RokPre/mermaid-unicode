@@ -6,7 +6,6 @@ No current task selected.
 
 ## Active TODOs
 
-- [ ] 2 Class add-class-diagram-renderer
 - [ ] 2 State add-state-diagram-renderer
 - [ ] 3 Requirement add-requirement-diagram-renderer
 - [ ] 3 Mindmap add-mindmap-tree-renderer
@@ -30,6 +29,7 @@ No current task selected.
 - [x] 1 Sequence add-sequence-fragment-frames
 - [x] 2 Shared extract-style-and-color-model
 - [x] 2 ER add-er-diagram-renderer
+- [x] 2 Class add-class-diagram-renderer
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 1 Flowchart add-open-solid-connectors
@@ -445,7 +445,7 @@ Completed as a stable terminal ER subset: entity aliases, attribute compartments
 
 Priority: 2
 Area: Class
-Status: pending
+Status: done
 Depends on: add-diagram-registry, extract-style-and-color-model
 
 Goal:
@@ -467,7 +467,7 @@ Acceptance criteria:
 - `go test ./...` passes.
 
 Notes:
-Do not let class parser changes alter flowchart edge parsing.
+Completed as a dedicated `pkg/classdiagram` renderer, so class parser changes do not alter flowchart edge parsing. Namespace and lollipop syntax remain future work.
 
 ### add-state-diagram-renderer
 

@@ -51,6 +51,12 @@ graph LR
 CUSTOMER ||--o{ ORDER : places`,
 			want: "er",
 		},
+		{
+			name: "class diagram",
+			input: `classDiagram
+Animal <|-- Duck`,
+			want: "class",
+		},
 	}
 
 	for _, tt := range tests {
@@ -73,7 +79,6 @@ func TestDiagramFactoryRejectsKnownUnsupportedTypes(t *testing.T) {
 		wantType    string
 		wantMessage string
 	}{
-		{name: "class", input: "classDiagram\nA <|-- B", wantType: "classDiagram"},
 		{name: "state", input: "stateDiagram-v2\n[*] --> Still", wantType: "stateDiagram"},
 		{name: "journey", input: "journey\ntitle Flow", wantType: "journey"},
 		{name: "gantt", input: "gantt\ntitle Plan", wantType: "gantt"},

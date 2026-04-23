@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/AlexanderGrooff/mermaid-ascii/pkg/classdiagram"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/diagram"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/er"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/sequence"
@@ -40,6 +41,15 @@ var supportedDiagramRegistry = []diagramRegistration{
 		},
 	},
 	{
+		typeName: "class",
+		detect: func(input, _ string) bool {
+			return classdiagram.IsClassDiagram(input)
+		},
+		create: func() diagram.Diagram {
+			return &ClassDiagram{}
+		},
+	},
+	{
 		typeName: "er",
 		detect: func(input, _ string) bool {
 			return er.IsERDiagram(input)
@@ -51,7 +61,6 @@ var supportedDiagramRegistry = []diagramRegistration{
 }
 
 var unsupportedDiagramRegistry = []unsupportedDiagramRegistration{
-	{typeName: "classDiagram", detect: keywordDetector("classDiagram")},
 	{typeName: "stateDiagram", detect: anyKeywordDetector("stateDiagram", "stateDiagram-v2")},
 	{typeName: "journey", detect: keywordDetector("journey")},
 	{typeName: "gantt", detect: keywordDetector("gantt")},
@@ -188,6 +197,30 @@ func (ed *ERDiagram) Render(config *diagram.Config) (string, error) {
 
 func (ed *ERDiagram) Type() string {
 	return "er"
+}
+
+type ClassDiagram struct {
+	parsed *classdiagram.Diagram
+}
+
+func (cd *ClassDiagram) Parse(input string) error {
+	parsed, err := classdiagram.Parse(input)
+	if err != nil {
+		return err
+	}
+	cd.parsed = parsed
+	return nil
+}
+
+func (cd *ClassDiagram) Render(config *diagram.Config) (string, error) {
+	if cd.parsed == nil {
+		return "", fmt.Errorf("class diagram not parsed: call Parse() before Render()")
+	}
+	return classdiagram.Render(cd.parsed, config)
+}
+
+func (cd *ClassDiagram) Type() string {
+	return "class"
 }
 
 type GraphDiagram struct {
