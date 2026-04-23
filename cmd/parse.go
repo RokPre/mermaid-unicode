@@ -614,14 +614,18 @@ func mermaidFileToMap(mermaid, styleType string) (*graphProperties, error) {
 		return &properties, errors.New("missing graph definition")
 	}
 
-	// First line should either say "graph TD" or "graph LR"
+	// First line should define the graph orientation.
 	switch lines[0] {
 	case "graph LR", "flowchart LR":
 		properties.graphDirection = "LR"
+	case "graph RL", "flowchart RL":
+		properties.graphDirection = "RL"
 	case "graph TD", "flowchart TD", "graph TB", "flowchart TB":
 		properties.graphDirection = "TD"
+	case "graph BT", "flowchart BT":
+		properties.graphDirection = "BT"
 	default:
-		return &properties, fmt.Errorf("unsupported graph type '%s'. Supported types: graph TD, graph TB, graph LR, flowchart TD, flowchart TB, flowchart LR", lines[0])
+		return &properties, fmt.Errorf("unsupported graph type '%s'. Supported types: graph TD, graph TB, graph BT, graph LR, graph RL, flowchart TD, flowchart TB, flowchart BT, flowchart LR, flowchart RL", lines[0])
 	}
 	lines = lines[1:]
 

@@ -26,6 +26,7 @@ No current task selected.
 
 - [x] 0 Architecture add-diagram-registry
 - [x] 1 Flowchart add-expanded-shape-syntax
+- [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 0 Graph existing-flowchart-renderer
 - [x] 0 Sequence existing-sequence-renderer
 - [x] 1 Graph add-unicode-graph-rendering
@@ -120,6 +121,35 @@ Acceptance criteria:
 
 Notes:
 This completes one slice of `audit-flowchart-parity`; `BT`/`RL`, extra link heads, and a support matrix remain active follow-ups.
+
+### add-reverse-flowchart-directions
+
+Priority: 1
+Area: Flowchart
+Status: done
+Depends on: add-diagram-registry
+
+Goal:
+Support Mermaid `graph RL`, `flowchart RL`, `graph BT`, and `flowchart BT` directions in the terminal graph renderer.
+
+Context:
+The renderer previously accepted `LR`, `TD`, and `TB`, while Mermaid also documents `RL` and `BT`. The existing layout model already separates horizontal and vertical flow, so reverse directions can be represented by mirroring the mapped grid before pathing and drawing.
+
+Expected changes:
+- Parse `RL` and `BT` graph/flowchart headers.
+- Keep horizontal and vertical layout decisions orientation-aware instead of checking only `LR` or `TD`.
+- Mirror node grid coordinates for reversed directions before calculating paths, sizes, and subgraph bounds.
+- Render `RL` arrows leftward and `BT` arrows upward.
+- Add parser and render tests.
+
+Acceptance criteria:
+- `graph RL` renders the child left of the parent with a left arrowhead.
+- `graph BT` renders the child above the parent with an up arrowhead.
+- Existing `LR`, `TD`, and `TB` behavior remains covered by the full test suite.
+- `go test ./...` passes.
+
+Notes:
+This completes the reverse-direction slice of `audit-flowchart-parity`. Complex subgraph layouts in reversed directions may still need golden fixtures later.
 
 ### expand-sequence-core
 

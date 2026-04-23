@@ -329,6 +329,30 @@ func TestMermaidFileToMapKeepsExpandedNodeShapeAcrossBareReferences(t *testing.T
 	}
 }
 
+func TestMermaidFileToMapParsesReverseDirections(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{input: "graph RL\nA --> B", want: "RL"},
+		{input: "flowchart RL\nA --> B", want: "RL"},
+		{input: "graph BT\nA --> B", want: "BT"},
+		{input: "flowchart BT\nA --> B", want: "BT"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			properties, err := mermaidFileToMap(tt.input, "cli")
+			if err != nil {
+				t.Fatalf("mermaidFileToMap() error = %v", err)
+			}
+			if properties.graphDirection != tt.want {
+				t.Fatalf("graphDirection = %q, want %q", properties.graphDirection, tt.want)
+			}
+		})
+	}
+}
+
 func TestMermaidFileToMapParsesEdgeLineStyles(t *testing.T) {
 	properties, err := mermaidFileToMap("graph LR\nA ==> B\nA ==>|heavy| C\nA -.-> D\nA -.->|dash| E\nA -.- F", "cli")
 	if err != nil {

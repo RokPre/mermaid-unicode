@@ -182,6 +182,40 @@ D@{ shape: lean-r, label: "Input" }`, config)
 	assertUniformDisplayWidth(t, output)
 }
 
+func TestRenderGraphSupportsRightToLeftDirection(t *testing.T) {
+	config := diagram.NewTestConfig(false, "cli")
+	output, err := RenderDiagram("graph RL\nA --> B", config)
+	if err != nil {
+		t.Fatalf("RenderDiagram() error = %v", err)
+	}
+
+	if !strings.Contains(output, "◄") {
+		t.Fatalf("expected right-to-left arrowhead\noutput:\n%s", output)
+	}
+	if strings.Index(output, "B") > strings.Index(output, "A") {
+		t.Fatalf("expected B to render left of A in RL layout\noutput:\n%s", output)
+	}
+
+	assertUniformDisplayWidth(t, output)
+}
+
+func TestRenderGraphSupportsBottomToTopDirection(t *testing.T) {
+	config := diagram.NewTestConfig(false, "cli")
+	output, err := RenderDiagram("graph BT\nA --> B", config)
+	if err != nil {
+		t.Fatalf("RenderDiagram() error = %v", err)
+	}
+
+	if !strings.Contains(output, "▲") {
+		t.Fatalf("expected bottom-to-top arrowhead\noutput:\n%s", output)
+	}
+	if strings.Index(output, "B") > strings.Index(output, "A") {
+		t.Fatalf("expected B to render above A in BT layout\noutput:\n%s", output)
+	}
+
+	assertUniformDisplayWidth(t, output)
+}
+
 func TestRenderGraphShapeGlyphsRespectAsciiFallback(t *testing.T) {
 	config := diagram.NewTestConfig(true, "cli")
 	output, err := RenderDiagram("graph LR\nA(Rounded)\nB[[Double]]\nC{Decision}", config)

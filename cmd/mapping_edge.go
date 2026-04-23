@@ -97,12 +97,12 @@ func (g *graph) parallelDirections(e *edge, duplicateIndex int) (direction, dire
 
 	dir := determineDirection(genericCoord(*e.from.gridCoord), genericCoord(*e.to.gridCoord))
 	switch {
-	case g.graphDirection == "LR" && (dir == Right || dir == Left):
+	case g.isHorizontalLayout() && (dir == Right || dir == Left):
 		options := [][2]direction{{Down, Down}, {Up, Up}}
 		if duplicateIndex-1 < len(options) {
 			return options[duplicateIndex-1][0], options[duplicateIndex-1][1], true
 		}
-	case g.graphDirection == "TD" && (dir == Down || dir == Up):
+	case g.isVerticalLayout() && (dir == Down || dir == Up):
 		options := [][2]direction{{Right, Right}, {Left, Left}}
 		if duplicateIndex-1 < len(options) {
 			return options[duplicateIndex-1][0], options[duplicateIndex-1][1], true

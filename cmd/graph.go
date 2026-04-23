@@ -77,6 +77,18 @@ type subgraph struct {
 	maxY int
 }
 
+func (g graph) isHorizontalLayout() bool {
+	return g.graphDirection == "LR" || g.graphDirection == "RL"
+}
+
+func (g graph) isVerticalLayout() bool {
+	return !g.isHorizontalLayout()
+}
+
+func (g graph) isReversedLayout() bool {
+	return g.graphDirection == "RL" || g.graphDirection == "BT"
+}
+
 func mkGraph(data *orderedmap.OrderedMap[string, []textEdge], nodeSpecs map[string]graphNodeSpec, edgeStyles map[int]styleClass) graph {
 	g := graph{drawing: mkDrawing(0, 0)}
 	g.grid = make(map[gridCoord]*node)
@@ -236,7 +248,7 @@ func (g *graph) createMapping() {
 
 	// Separate root nodes by whether they're in subgraphs, but only if we have both types
 	// AND there are edges in subgraphs (indicating intentional layout structure)
-	shouldSeparate := g.graphDirection == "LR" && hasExternalRoots && hasSubgraphRootsWithEdges
+	shouldSeparate := g.isHorizontalLayout() && hasExternalRoots && hasSubgraphRootsWithEdges
 
 	externalRootNodes := []*node{}
 	subgraphRootNodes := []*node{}
@@ -256,7 +268,7 @@ func (g *graph) createMapping() {
 	// Place external root nodes first at level 0
 	for _, n := range externalRootNodes {
 		var mappingCoord *gridCoord
-		if g.graphDirection == "LR" {
+		if g.isHorizontalLayout() {
 			mappingCoord = g.reserveSpotInGrid(g.nodes[n.index], &gridCoord{x: 0, y: highestPositionPerLevel[0]})
 		} else {
 			mappingCoord = g.reserveSpotInGrid(g.nodes[n.index], &gridCoord{x: highestPositionPerLevel[0], y: 0})
@@ -272,7 +284,7 @@ func (g *graph) createMapping() {
 		subgraphLevel := 4
 		for _, n := range subgraphRootNodes {
 			var mappingCoord *gridCoord
-			if g.graphDirection == "LR" {
+			if g.isHorizontalLayout() {
 				mappingCoord = g.reserveSpotInGrid(g.nodes[n.index], &gridCoord{x: subgraphLevel, y: highestPositionPerLevel[subgraphLevel]})
 			} else {
 				mappingCoord = g.reserveSpotInGrid(g.nodes[n.index], &gridCoord{x: highestPositionPerLevel[subgraphLevel], y: subgraphLevel})
@@ -287,7 +299,7 @@ func (g *graph) createMapping() {
 		log.Debugf("Creating mapping for node %s at %v", n.name, n.gridCoord)
 		var childLevel int
 		// Next column is 4 coords further. This is because every node is 3 coords wide + 1 coord inbetween.
-		if g.graphDirection == "LR" {
+		if g.isHorizontalLayout() {
 			childLevel = n.gridCoord.x + 4
 		} else {
 			childLevel = n.gridCoord.y + 4
@@ -300,7 +312,7 @@ func (g *graph) createMapping() {
 			}
 
 			var mappingCoord *gridCoord
-			if g.graphDirection == "LR" {
+			if g.isHorizontalLayout() {
 				mappingCoord = g.reserveSpotInGrid(g.nodes[child.index], &gridCoord{x: childLevel, y: highestPosition})
 			} else {
 				mappingCoord = g.reserveSpotInGrid(g.nodes[child.index], &gridCoord{x: highestPosition, y: childLevel})
@@ -310,6 +322,8 @@ func (g *graph) createMapping() {
 			highestPositionPerLevel[childLevel] = highestPosition + 4
 		}
 	}
+
+	g.mirrorMappingForReversedDirection()
 
 	for _, n := range g.nodes {
 		g.setColumnWidth(n)
@@ -336,6 +350,46 @@ func (g *graph) createMapping() {
 
 	// Offset everything if subgraphs have negative coordinates
 	g.offsetDrawingForSubgraphs()
+}
+
+func (g *graph) mirrorMappingForReversedDirection() {
+	if !g.isReversedLayout() {
+		return
+	}
+
+	maxPrimary := 0
+	for _, n := range g.nodes {
+		if n.gridCoord == nil {
+			continue
+		}
+		if g.isHorizontalLayout() {
+			maxPrimary = Max(maxPrimary, n.gridCoord.x)
+		} else {
+			maxPrimary = Max(maxPrimary, n.gridCoord.y)
+		}
+	}
+
+	g.grid = make(map[gridCoord]*node)
+	for _, n := range g.nodes {
+		if n.gridCoord == nil {
+			continue
+		}
+		if g.isHorizontalLayout() {
+			n.gridCoord.x = maxPrimary - n.gridCoord.x
+		} else {
+			n.gridCoord.y = maxPrimary - n.gridCoord.y
+		}
+		g.reserveNodeGridCells(n)
+	}
+}
+
+func (g *graph) reserveNodeGridCells(n *node) {
+	for x := 0; x < 3; x++ {
+		for y := 0; y < 3; y++ {
+			reservedCoord := gridCoord{x: n.gridCoord.x + x, y: n.gridCoord.y + y}
+			g.grid[reservedCoord] = n
+		}
+	}
 }
 
 func (g *graph) calculateSubgraphBoundingBoxes() {
