@@ -700,6 +700,12 @@ Note that with `--coords` enabled, the grid-coords shown show the starting locat
 - [x] Relationships (`contains`, `copies`, `derives`, `satisfies`, `verifies`, `refines`, `traces`)
 - [x] ASCII and Unicode rendering modes
 
+### Mindmaps ✅
+- [x] `mindmap` detection and rendering
+- [x] Indentation-based hierarchy parsing
+- [x] Unicode tree glyphs and ASCII fallback
+- [x] Simple terminal-friendly node shape text normalization
+
 ## TODOs
 
 The baseline components for Mermaid work, but there are a lot of things that are not supported yet. Here's a list of things that are not yet supported:

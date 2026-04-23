@@ -7,6 +7,7 @@ import (
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/classdiagram"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/diagram"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/er"
+	"github.com/AlexanderGrooff/mermaid-ascii/pkg/mindmap"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/requirementdiagram"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/sequence"
 	"github.com/AlexanderGrooff/mermaid-ascii/pkg/statediagram"
@@ -70,6 +71,15 @@ var supportedDiagramRegistry = []diagramRegistration{
 		},
 	},
 	{
+		typeName: "mindmap",
+		detect: func(input, _ string) bool {
+			return mindmap.IsMindmap(input)
+		},
+		create: func() diagram.Diagram {
+			return &MindmapDiagram{}
+		},
+	},
+	{
 		typeName: "er",
 		detect: func(input, _ string) bool {
 			return er.IsERDiagram(input)
@@ -86,7 +96,6 @@ var unsupportedDiagramRegistry = []unsupportedDiagramRegistration{
 	{typeName: "pie", detect: keywordDetector("pie")},
 	{typeName: "quadrantChart", detect: keywordDetector("quadrantChart")},
 	{typeName: "gitGraph", detect: keywordDetector("gitGraph")},
-	{typeName: "mindmap", detect: keywordDetector("mindmap")},
 	{typeName: "timeline", detect: keywordDetector("timeline")},
 	{typeName: "zenuml", detect: keywordDetector("zenuml")},
 }
@@ -287,6 +296,30 @@ func (rd *RequirementDiagram) Render(config *diagram.Config) (string, error) {
 
 func (rd *RequirementDiagram) Type() string {
 	return "requirement"
+}
+
+type MindmapDiagram struct {
+	parsed *mindmap.Diagram
+}
+
+func (md *MindmapDiagram) Parse(input string) error {
+	parsed, err := mindmap.Parse(input)
+	if err != nil {
+		return err
+	}
+	md.parsed = parsed
+	return nil
+}
+
+func (md *MindmapDiagram) Render(config *diagram.Config) (string, error) {
+	if md.parsed == nil {
+		return "", fmt.Errorf("mindmap not parsed: call Parse() before Render()")
+	}
+	return mindmap.Render(md.parsed, config)
+}
+
+func (md *MindmapDiagram) Type() string {
+	return "mindmap"
 }
 
 type GraphDiagram struct {

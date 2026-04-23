@@ -6,7 +6,6 @@ No current task selected.
 
 ## Active TODOs
 
-- [ ] 3 Mindmap add-mindmap-tree-renderer
 - [ ] 4 Timeline add-timeline-renderer
 - [ ] 4 UserJourney add-user-journey-renderer
 - [ ] 4 Charts add-pie-and-quadrant-renderers
@@ -30,6 +29,7 @@ No current task selected.
 - [x] 2 Class add-class-diagram-renderer
 - [x] 2 State add-state-diagram-renderer
 - [x] 3 Requirement add-requirement-diagram-renderer
+- [x] 3 Mindmap add-mindmap-tree-renderer
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 1 Flowchart add-open-solid-connectors
@@ -532,7 +532,7 @@ Completed as a stable terminal renderer for requirement and element blocks, sort
 
 Priority: 3
 Area: Mindmap
-Status: pending
+Status: done
 Depends on: add-diagram-registry
 
 Goal:
@@ -555,7 +555,7 @@ Acceptance criteria:
 - `go test ./...` passes.
 
 Notes:
-Radial layout and icon integration are out of scope for the first implementation.
+Completed as an indentation-based terminal tree renderer with Unicode and ASCII output. Radial layout and icon integration remain out of scope.
 
 ### add-timeline-renderer
 
