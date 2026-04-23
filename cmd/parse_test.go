@@ -414,7 +414,7 @@ func TestMermaidFileToMapParsesClassAndLinkStyles(t *testing.T) {
 		t.Fatalf("styleClass = %q, want warning", spec.styleClass)
 	}
 
-	nodeStyle := (*properties.styleClasses)["warning"].styles
+	nodeStyle := (*properties.styleClasses)["warning"].Styles
 	if nodeStyle["stroke"] != "#ff0000" {
 		t.Fatalf("node stroke = %q, want #ff0000", nodeStyle["stroke"])
 	}
@@ -425,7 +425,7 @@ func TestMermaidFileToMapParsesClassAndLinkStyles(t *testing.T) {
 		t.Fatalf("node fill = %q, want #111111", nodeStyle["fill"])
 	}
 
-	edgeStyle := properties.edgeStyles[0].styles
+	edgeStyle := properties.edgeStyles[0].Styles
 	if edgeStyle["stroke"] != "#0000ff" {
 		t.Fatalf("edge stroke = %q, want #0000ff", edgeStyle["stroke"])
 	}

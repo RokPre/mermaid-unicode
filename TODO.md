@@ -6,7 +6,6 @@ No current task selected.
 
 ## Active TODOs
 
-- [ ] 2 Shared extract-style-and-color-model
 - [ ] 2 ER add-er-diagram-renderer
 - [ ] 2 Class add-class-diagram-renderer
 - [ ] 2 State add-state-diagram-renderer
@@ -30,6 +29,7 @@ No current task selected.
 - [x] 1 Sequence add-sequence-activation-shorthand
 - [x] 1 Sequence expand-sequence-core
 - [x] 1 Sequence add-sequence-fragment-frames
+- [x] 2 Shared extract-style-and-color-model
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 1 Flowchart add-open-solid-connectors
@@ -388,7 +388,7 @@ This uses terminal-stable separator frames rather than trying to draw nested bro
 
 Priority: 2
 Area: Shared
-Status: pending
+Status: done
 Depends on: add-diagram-registry
 
 Goal:
@@ -410,7 +410,7 @@ Acceptance criteria:
 - `go test ./...` passes.
 
 Notes:
-Prefer small extraction over a large theming framework.
+Completed as a small shared `pkg/diagram` style model. Graph parsing and rendering now use shared style classes, style-map parsing, color normalization, and text wrapping helpers without changing rendered graph behavior.
 
 ### add-er-diagram-renderer
 

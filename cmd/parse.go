@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/AlexanderGrooff/mermaid-ascii/pkg/diagram"
 	"github.com/elliotchance/orderedmap/v2"
 	log "github.com/sirupsen/logrus"
 )
@@ -282,27 +283,11 @@ func nodeShapeSyntaxes() []nodeShapeSyntax {
 
 func parseStyleClass(matchedLine []string) styleClass {
 	className := matchedLine[0]
-	return styleClass{className, parseStyleMap(matchedLine[1])}
+	return styleClass{Name: className, Styles: parseStyleMap(matchedLine[1])}
 }
 
-func parseStyleMap(styles string) map[string]string {
-	styleMap := make(map[string]string)
-	for _, style := range strings.Split(styles, ",") {
-		style = strings.TrimSpace(strings.TrimSuffix(style, ";"))
-		if style == "" {
-			continue
-		}
-		kv := strings.SplitN(style, ":", 2)
-		if len(kv) != 2 {
-			continue
-		}
-		key := strings.TrimSpace(kv[0])
-		value := strings.TrimSpace(strings.TrimSuffix(kv[1], ";"))
-		if key != "" && value != "" {
-			styleMap[key] = value
-		}
-	}
-	return styleMap
+func parseStyleMap(styles string) diagram.StyleMap {
+	return diagram.ParseStyleMap(styles)
 }
 
 func setEdgeWithLabel(lhs, rhs []textNode, label string, lineStyle graphEdgeLineStyle, hasArrowHead bool, gp *graphProperties) []textNode {
@@ -507,7 +492,7 @@ func (gp *graphProperties) parseString(line string) ([]textNode, error) {
 			regex: regexp.MustCompile(`^classDef\s+(\S+)\s+(.+)$`),
 			handler: func(match []string) ([]textNode, error) {
 				s := parseStyleClass(match)
-				(*gp.styleClasses)[s.name] = s
+				(*gp.styleClasses)[s.Name] = s
 				return []textNode{}, nil
 			},
 		},
@@ -534,8 +519,8 @@ func (gp *graphProperties) parseString(line string) ([]textNode, error) {
 					return []textNode{}, err
 				}
 				gp.edgeStyles[index] = styleClass{
-					name:   fmt.Sprintf("linkStyle-%d", index),
-					styles: parseStyleMap(match[1]),
+					Name:   fmt.Sprintf("linkStyle-%d", index),
+					Styles: parseStyleMap(match[1]),
 				}
 				return []textNode{}, nil
 			},

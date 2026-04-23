@@ -24,15 +24,15 @@ func (g *graph) applyColors() {
 }
 
 func (g *graph) applyNodeColors(n *node) {
-	if n == nil || n.drawing == nil || n.drawingCoord == nil || len(n.styleClass.styles) == 0 {
+	if n == nil || n.drawing == nil || n.drawingCoord == nil || len(n.styleClass.Styles) == 0 {
 		return
 	}
 
 	origin := *n.drawingCoord
 	width, height := getDrawingSize(n.drawing)
-	stroke := n.styleClass.styles["stroke"]
-	textColor := n.styleClass.styles["color"]
-	fill := n.styleClass.styles["fill"]
+	stroke := n.styleClass.Styles["stroke"]
+	textColor := n.styleClass.Styles["color"]
+	fill := n.styleClass.Styles["fill"]
 
 	labelCoords := g.nodeLabelCoords(n, origin, width, height)
 	labelCoordSet := make(map[drawingCoord]struct{}, len(labelCoords))
@@ -89,12 +89,12 @@ func (g *graph) nodeLabelCoords(n *node, origin drawingCoord, width, height int)
 }
 
 func (g *graph) applyEdgeColors(e *edge) {
-	if e == nil || len(e.styleClass.styles) == 0 {
+	if e == nil || len(e.styleClass.Styles) == 0 {
 		return
 	}
 
-	stroke := e.styleClass.styles["stroke"]
-	labelColor := e.styleClass.styles["color"]
+	stroke := e.styleClass.Styles["stroke"]
+	labelColor := e.styleClass.Styles["color"]
 	if labelColor == "" {
 		labelColor = stroke
 	}

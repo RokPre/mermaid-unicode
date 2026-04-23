@@ -4,17 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gookit/color"
+	"github.com/AlexanderGrooff/mermaid-ascii/pkg/diagram"
 	"github.com/mattn/go-runewidth"
 	log "github.com/sirupsen/logrus"
 )
 
 type drawing [][]string
 
-type styleClass struct {
-	name   string
-	styles map[string]string
-}
+type styleClass = diagram.StyleClass
 
 func (g *graph) drawNode(n *node) {
 	log.Debug("Drawing node ", n.name, " at ", *n.drawingCoord)
@@ -229,38 +226,15 @@ func drawSubgraphLabel(sg *subgraph, g graph) (*drawing, drawingCoord) {
 }
 
 func wrapTextInColor(text, c, styleType string) string {
-	return wrapTextInStyle(text, c, "", styleType)
+	return diagram.WrapTextInColor(text, c, styleType)
 }
 
 func wrapTextInStyle(text, fg, bg, styleType string) string {
-	fg = normalizeStyleColor(fg)
-	bg = normalizeStyleColor(bg)
-	if fg == "" && bg == "" {
-		return text
-	}
-	if styleType == "html" {
-		style := []string{}
-		if fg != "" {
-			style = append(style, fmt.Sprintf("color: %s", fg))
-		}
-		if bg != "" {
-			style = append(style, fmt.Sprintf("background-color: %s", bg))
-		}
-		return fmt.Sprintf("<span style='%s'>%s</span>", strings.Join(style, "; "), text)
-	} else if styleType == "cli" {
-		return color.HEXStyle(fg, bg).Sprint(text)
-	} else {
-		log.Warnf("Unknown style type %s", styleType)
-		return text
-	}
+	return diagram.WrapTextInStyle(text, fg, bg, styleType)
 }
 
 func normalizeStyleColor(c string) string {
-	c = strings.TrimSpace(strings.TrimSuffix(c, ";"))
-	if c == "" || strings.EqualFold(c, "none") || strings.EqualFold(c, "transparent") {
-		return ""
-	}
-	return c
+	return diagram.NormalizeStyleColor(c)
 }
 
 func (d *drawing) increaseSize(x int, y int) {
