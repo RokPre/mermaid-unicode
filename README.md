@@ -291,15 +291,35 @@ Supported graph node shape mappings:
 | `A{Text}` | decision approximation with `◇` endpoints |
 | `A{{Text}}` | hexagon-like approximation |
 | `A[/Text/]` | parallelogram-like approximation |
+| `A@{ shape: rounded, label: "Text" }` | expanded Mermaid shape metadata mapped to the same terminal shape set |
+
+Supported expanded `shape:` aliases include the terminal-friendly Mermaid families for rectangles, rounded boxes, stadiums, subroutines, databases, circles, decisions, hexagons, and parallelograms. Unsupported expanded shapes are rendered as normal square nodes with the clean node id instead of treating the metadata as part of the label.
 
 Supported graph edge mappings:
 
 | Mermaid syntax | Terminal connector |
 | --- | --- |
 | `A --> B` | light line, `────►` |
+| `A --- B` | light line without arrowhead, `────` |
+| `A ---|label| B` | labeled light line without arrowhead |
 | `A ==> B` | heavy line, `━━━━►` |
 | `A -.-> B` | dashed line with arrowhead, `┄┄┄┄►` |
 | `A -.- B` | dashed line without arrowhead |
+
+Supported graph directions are `LR`, `RL`, `TD`, `TB`, and `BT` for both `graph` and `flowchart`.
+
+Supported flowchart features:
+
+| Feature | Status |
+| --- | --- |
+| Node labels, including quoted labels and multiline label breaks | Supported |
+| Node shape syntax and selected expanded `@{ shape: ... }` aliases | Supported |
+| `-->`, `---`, `==>`, `-.->`, and `-.-` connectors | Supported |
+| Edge labels using `-->|label|`, `---|label|`, `==>|label|`, and `-.->|label|` | Supported |
+| Chained links and `A & B` shorthand | Supported |
+| `classDef`, `class`, and `linkStyle` color styling | Supported |
+| `subgraph ... end` frames, including nested and labeled subgraphs | Supported |
+| Mermaid click callbacks, browser interactivity, circle/cross link heads, and exact SVG shape parity | Not supported |
 
 You can also choose default styles for bare nodes and standard arrows:
 
@@ -620,14 +640,14 @@ Note that with `--coords` enabled, the grid-coords shown show the starting locat
 ## Supported Diagram Types
 
 ### Graphs / Flowcharts ✅
-- [x] Graph directions (`graph LR` and `graph TD`)
+- [x] Graph directions (`graph LR`, `graph RL`, `graph TD`, `graph TB`, and `graph BT`)
 - [x] Labelled edges (like `A -->|label| B`)
 - [x] Multiple arrows on one line (like `A --> B --> C`)
 - [x] `A & B` syntax
 - [x] `classDef` and `class` for colored output
 - [x] Prevent arrows overlapping nodes
-- [ ] `subgraph` support
-- [ ] Shapes other than rectangles
+- [x] `subgraph` support
+- [x] Shapes other than rectangles
 - [ ] Diagonal arrows
 
 ### Sequence Diagrams ✅
@@ -649,13 +669,13 @@ The baseline components for Mermaid work, but there are a lot of things that are
 ### Syntax support
 
 - [x] Labelled edges (like `A -->|label| B`)
-- [x] Graph directions like `graph LR` and `graph TD`
+- [x] Graph directions like `graph LR`, `graph RL`, `graph TD`, `graph TB`, and `graph BT`
 - [x] `classDef` and `class`
 - [x] `A & B`
 - [x] Multiple arrows on one line (like `A --> B --> C`)
-- [ ] `subgraph`
-- [ ] Shapes other than rectangles
-- [ ] Whitespacing and comments
+- [x] `subgraph`
+- [x] Shapes other than rectangles
+- [x] Whitespacing and comments
 
 ### Rendering
 

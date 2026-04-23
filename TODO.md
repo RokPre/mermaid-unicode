@@ -6,7 +6,6 @@ No current task selected.
 
 ## Active TODOs
 
-- [ ] 1 Flowchart audit-flowchart-parity
 - [ ] 1 Sequence expand-sequence-core
 - [ ] 2 Shared extract-style-and-color-model
 - [ ] 2 ER add-er-diagram-renderer
@@ -25,9 +24,11 @@ No current task selected.
 ## Done TODOs
 
 - [x] 0 Architecture add-diagram-registry
+- [x] 1 Flowchart audit-flowchart-parity
 - [x] 1 Flowchart add-expanded-shape-syntax
 - [x] 1 Flowchart add-reverse-flowchart-directions
 - [x] 1 Flowchart add-open-solid-connectors
+- [x] 1 Docs document-flowchart-support-matrix
 - [x] 0 Graph existing-flowchart-renderer
 - [x] 0 Sequence existing-sequence-renderer
 - [x] 1 Graph add-unicode-graph-rendering
@@ -69,7 +70,7 @@ Keep the registry small and local unless adding a package-level abstraction clea
 
 Priority: 1
 Area: Flowchart
-Status: pending
+Status: done
 Depends on: add-diagram-registry
 
 Goal:
@@ -92,7 +93,33 @@ Acceptance criteria:
 - `go test ./...` passes.
 
 Notes:
-Do not attempt full Mermaid v11 expanded shape parity in one pass. Map aliases to existing approximations first.
+Completed as a terminal-friendly flowchart parity pass. Remaining work such as circle/cross link heads or exact Mermaid SVG shape parity should be tracked as separate future tasks if it becomes necessary.
+
+### document-flowchart-support-matrix
+
+Priority: 1
+Area: Docs
+Status: done
+Depends on: audit-flowchart-parity
+
+Goal:
+Document the supported flowchart subset and the intentional Mermaid browser-renderer differences in README.
+
+Context:
+Flowchart support has expanded to include Unicode shapes, selected expanded shape metadata, reverse directions, styled connectors, colors, and subgraphs. The README still had stale checklist entries that said several of those features were unsupported.
+
+Expected changes:
+- Update the graph/flowchart styling section with supported shape aliases, connectors, directions, and unsupported boundaries.
+- Update the supported diagram checklist so it matches current code behavior.
+- Keep unsupported browser-only behavior and exact SVG parity clearly outside the current terminal scope.
+
+Acceptance criteria:
+- README lists the current supported flowchart directions.
+- README lists current supported connector families and selected expanded shape metadata.
+- README calls out unsupported circle/cross link heads and browser interactivity.
+
+Notes:
+This closes the current `audit-flowchart-parity` task at the documented terminal-renderer subset.
 
 ### add-expanded-shape-syntax
 
